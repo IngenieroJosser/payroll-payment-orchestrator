@@ -4,6 +4,8 @@ import com.corvian.payroll_payment_orchestrator.payroll.domain.model.PayrollBatc
 import com.corvian.payroll_payment_orchestrator.payroll.domain.model.PayrollPayment;
 import com.corvian.payroll_payment_orchestrator.payroll.infrastructure.persistence.PayrollBatchEntity;
 import com.corvian.payroll_payment_orchestrator.payroll.infrastructure.persistence.PayrollPaymentEntity;
+import com.corvian.payroll_payment_orchestrator.shared.crypto.CryptoService;
+import com.corvian.payroll_payment_orchestrator.shared.util.MaskingUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -11,6 +13,11 @@ import java.util.List;
 
 @Component
 public class PayrollBatchMapper {
+    private final CryptoService cryptoService;
+
+    public PayrollBatchMapper(CryptoService cryptoService) {
+        this.cryptoService = cryptoService;
+    }
 
     public PayrollBatch toDomain(PayrollBatchEntity entity) {
         List<PayrollPayment> payments = entity.getPayments() == null
@@ -75,10 +82,13 @@ public class PayrollBatchMapper {
         entity.setId(domain.id());
         entity.setEmployeeDocumentType(domain.employeeDocumentType());
         entity.setEmployeeDocumentNumber(domain.employeeDocumentNumber());
+        entity.setEmployeeDocumentHash(cryptoService.hmacSha256(domain.employeeDocumentNumber()));
         entity.setEmployeeFullName(domain.employeeFullName());
         entity.setBankCode(domain.bankCode());
         entity.setAccountType(domain.accountType());
         entity.setAccountNumber(domain.accountNumber());
+        entity.setAccountNumberHash(cryptoService.hmacSha256(domain.accountNumber()));
+        entity.setAccountNumberLast4(MaskingUtils.last4(domain.accountNumber()));
         entity.setAmount(domain.amount());
         entity.setStatus(domain.status());
         return entity;

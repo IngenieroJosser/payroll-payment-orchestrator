@@ -23,6 +23,8 @@ CREATE TABLE bank_accounts (
     company_id UUID NOT NULL REFERENCES companies(id),
     bank_code VARCHAR(20) NOT NULL,
     account_type VARCHAR(30) NOT NULL,
+    account_number_encrypted VARCHAR(2000),
+    account_number_hash VARCHAR(128),
     account_number_masked VARCHAR(30) NOT NULL,
     account_number_last4 VARCHAR(4) NOT NULL,
     status VARCHAR(30) NOT NULL,
@@ -59,6 +61,7 @@ CREATE TABLE webhook_endpoints (
 
 CREATE INDEX idx_companies_tenant_id ON companies(tenant_id);
 CREATE INDEX idx_bank_accounts_company_id ON bank_accounts(company_id);
+CREATE INDEX idx_bank_accounts_account_hash ON bank_accounts(account_number_hash);
 CREATE INDEX idx_audit_logs_resource_id ON audit_logs(resource_id);
 CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
 CREATE INDEX idx_webhook_endpoints_company_id ON webhook_endpoints(company_id);

@@ -24,6 +24,13 @@ En Linux/macOS:
 
 ```bash
 docker compose up -d
+./mvnw.cmd spring-boot:run "-Dspring-boot.run.profiles=dev"
+```
+
+En Linux/macOS:
+
+```bash
+docker compose up -d
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 

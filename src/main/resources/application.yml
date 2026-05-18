@@ -21,3 +21,23 @@ management:
 app:
   api:
     base-path: /api/v1
+  bank:
+    provider: sandbox
+  security:
+    jwt-secret: ${APP_JWT_SECRET:CHANGE_ME_DEV_SECRET_CHANGE_ME_DEV_SECRET_32_BYTES_MIN}
+    jwt-expiration-minutes: ${APP_JWT_EXPIRATION_MINUTES:60}
+    require-idempotency-key: ${APP_REQUIRE_IDEMPOTENCY_KEY:true}
+    ip-allowlist-enabled: ${APP_IP_ALLOWLIST_ENABLED:false}
+    ip-allowlist: ${APP_IP_ALLOWLIST:127.0.0.1,0:0:0:0:0:0:0:1}
+    mtls-enabled: ${APP_MTLS_ENABLED:false}
+    rate-limit-requests: ${APP_RATE_LIMIT_REQUESTS:120}
+    rate-limit-window-seconds: ${APP_RATE_LIMIT_WINDOW_SECONDS:60}
+  crypto:
+    encryption-key: ${APP_ENCRYPTION_KEY:0123456789ABCDEF0123456789ABCDEF}
+    hash-key: ${APP_HASH_KEY:CHANGE_ME_HASH_KEY_CHANGE_ME_HASH_KEY}
+  bootstrap:
+    admin:
+      email: ${APP_BOOTSTRAP_ADMIN_EMAIL:admin@corvian.local}
+      password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:Admin123!}
+  webhooks:
+    retry-fixed-delay-ms: ${APP_WEBHOOK_RETRY_FIXED_DELAY_MS:60000}

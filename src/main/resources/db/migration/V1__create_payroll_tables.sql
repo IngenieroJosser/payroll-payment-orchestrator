@@ -15,11 +15,14 @@ CREATE TABLE payroll_payments (
     id UUID PRIMARY KEY,
     batch_id UUID NOT NULL REFERENCES payroll_batches(id) ON DELETE CASCADE,
     employee_document_type VARCHAR(20) NOT NULL,
-    employee_document_number VARCHAR(50) NOT NULL,
+    employee_document_number VARCHAR(2000) NOT NULL,
+    employee_document_hash VARCHAR(128),
     employee_full_name VARCHAR(180) NOT NULL,
     bank_code VARCHAR(20) NOT NULL,
     account_type VARCHAR(30) NOT NULL,
-    account_number VARCHAR(60) NOT NULL,
+    account_number VARCHAR(2000) NOT NULL,
+    account_number_hash VARCHAR(128),
+    account_number_last4 VARCHAR(4),
     amount NUMERIC(19, 2) NOT NULL,
     status VARCHAR(40) NOT NULL
 );
@@ -28,3 +31,6 @@ CREATE INDEX idx_payroll_batches_company_id ON payroll_batches(company_id);
 CREATE INDEX idx_payroll_batches_status ON payroll_batches(status);
 CREATE INDEX idx_payroll_payments_batch_id ON payroll_payments(batch_id);
 CREATE INDEX idx_payroll_payments_status ON payroll_payments(status);
+
+CREATE INDEX idx_payroll_payments_employee_document_hash ON payroll_payments(employee_document_hash);
+CREATE INDEX idx_payroll_payments_account_number_hash ON payroll_payments(account_number_hash);

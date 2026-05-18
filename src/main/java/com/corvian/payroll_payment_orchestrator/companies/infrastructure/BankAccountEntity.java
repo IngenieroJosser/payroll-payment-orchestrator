@@ -1,11 +1,13 @@
 package com.corvian.payroll_payment_orchestrator.companies.infrastructure;
 
 import com.corvian.payroll_payment_orchestrator.payroll.domain.enums.AccountType;
+import com.corvian.payroll_payment_orchestrator.shared.crypto.EncryptedStringConverter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -32,6 +34,13 @@ public class BankAccountEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "account_type", nullable = false, length = 30)
     private AccountType accountType;
+
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(name = "account_number_encrypted", length = 2000)
+    private String accountNumber;
+
+    @Column(name = "account_number_hash", length = 128)
+    private String accountNumberHash;
 
     @Column(name = "account_number_masked", nullable = false, length = 30)
     private String accountNumberMasked;

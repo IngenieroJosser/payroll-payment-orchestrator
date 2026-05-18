@@ -9,6 +9,7 @@ import com.corvian.payroll_payment_orchestrator.companies.infrastructure.JpaBank
 import com.corvian.payroll_payment_orchestrator.companies.infrastructure.JpaCompanyRepository;
 import com.corvian.payroll_payment_orchestrator.payroll.domain.enums.AccountType;
 import com.corvian.payroll_payment_orchestrator.shared.exception.DomainException;
+import com.corvian.payroll_payment_orchestrator.shared.crypto.CryptoService;
 import com.corvian.payroll_payment_orchestrator.shared.util.MaskingUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,11 +23,13 @@ public class CompanyService {
     private final JpaCompanyRepository companyRepository;
     private final JpaBankAccountRepository bankAccountRepository;
     private final AuditLogService auditLogService;
+    private final CryptoService cryptoService;
 
-    public CompanyService(JpaCompanyRepository companyRepository, JpaBankAccountRepository bankAccountRepository, AuditLogService auditLogService) {
+    public CompanyService(JpaCompanyRepository companyRepository, JpaBankAccountRepository bankAccountRepository, AuditLogService auditLogService, CryptoService cryptoService) {
         this.companyRepository = companyRepository;
         this.bankAccountRepository = bankAccountRepository;
         this.auditLogService = auditLogService;
+        this.cryptoService = cryptoService;
     }
 
     @Transactional
@@ -65,6 +68,8 @@ public class CompanyService {
         entity.setCompanyId(companyId);
         entity.setBankCode(bankCode.trim());
         entity.setAccountType(accountType);
+        entity.setAccountNumber(accountNumber.trim());
+        entity.setAccountNumberHash(cryptoService.hmacSha256(accountNumber.trim()));
         entity.setAccountNumberMasked(MaskingUtils.maskAccount(accountNumber));
         entity.setAccountNumberLast4(MaskingUtils.last4(accountNumber));
         entity.setStatus(BankAccountStatus.ACTIVE);

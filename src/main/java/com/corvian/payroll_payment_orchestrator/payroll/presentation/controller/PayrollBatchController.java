@@ -13,6 +13,7 @@ import com.corvian.payroll_payment_orchestrator.shared.response.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,32 +34,38 @@ public class PayrollBatchController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAuthority('payroll:read')")
     public ResponseEntity<ApiResponse<List<PayrollBatchResponse>>> list() {
         return ResponseEntity.ok(ApiResponse.ok(payrollBatchUseCase.findAll().stream().map(this::toResponse).toList()));
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('payroll:create')")
     public ResponseEntity<ApiResponse<PayrollBatchResponse>> create(@Valid @RequestBody CreatePayrollBatchRequest request) {
         PayrollBatch createdBatch = payrollBatchUseCase.create(toCommand(request));
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(toResponse(createdBatch)));
     }
 
     @GetMapping("/{batchId}")
+    @PreAuthorize("hasAuthority('payroll:read')")
     public ResponseEntity<ApiResponse<PayrollBatchResponse>> findById(@PathVariable UUID batchId) {
         return ResponseEntity.ok(ApiResponse.ok(toResponse(payrollBatchUseCase.findById(batchId))));
     }
 
     @PostMapping("/{batchId}/validate")
+    @PreAuthorize("hasAuthority('payroll:create')")
     public ResponseEntity<ApiResponse<PayrollBatchResponse>> validate(@PathVariable UUID batchId) {
         return ResponseEntity.ok(ApiResponse.ok(toResponse(payrollBatchUseCase.validate(batchId))));
     }
 
     @PostMapping("/{batchId}/approve")
+    @PreAuthorize("hasAuthority('payroll:approve')")
     public ResponseEntity<ApiResponse<PayrollBatchResponse>> approve(@PathVariable UUID batchId) {
         return ResponseEntity.ok(ApiResponse.ok(toResponse(payrollBatchUseCase.approve(batchId))));
     }
 
     @PostMapping("/{batchId}/reject")
+    @PreAuthorize("hasAuthority('payroll:approve')")
     public ResponseEntity<ApiResponse<PayrollBatchResponse>> reject(
             @PathVariable UUID batchId,
             @Valid @RequestBody RejectPayrollBatchRequest request
@@ -67,6 +74,7 @@ public class PayrollBatchController {
     }
 
     @PostMapping("/{batchId}/execute")
+    @PreAuthorize("hasAuthority('payroll:execute')")
     public ResponseEntity<ApiResponse<PayrollBatchResponse>> execute(@PathVariable UUID batchId) {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(ApiResponse.ok(toResponse(payrollBatchUseCase.execute(batchId))));
     }

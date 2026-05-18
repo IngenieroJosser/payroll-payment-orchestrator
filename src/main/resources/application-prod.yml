@@ -29,3 +29,17 @@ logging:
   level:
     root: INFO
     com.corvian.payroll_payment_orchestrator: INFO
+
+
+app:
+  security:
+    jwt-secret: ${APP_JWT_SECRET}
+    require-idempotency-key: true
+    ip-allowlist-enabled: ${APP_IP_ALLOWLIST_ENABLED:true}
+    ip-allowlist: ${APP_IP_ALLOWLIST}
+    mtls-enabled: ${APP_MTLS_ENABLED:true}
+  crypto:
+    encryption-key: ${APP_ENCRYPTION_KEY}
+    hash-key: ${APP_HASH_KEY}
+  bank:
+    provider: ${APP_BANK_PROVIDER:rest}

@@ -11,6 +11,7 @@ import com.corvian.payroll_payment_orchestrator.payroll.domain.exception.Payroll
 import com.corvian.payroll_payment_orchestrator.payroll.domain.model.PayrollBatch;
 import com.corvian.payroll_payment_orchestrator.payroll.domain.model.PayrollPayment;
 import com.corvian.payroll_payment_orchestrator.shared.exception.DomainException;
+import com.corvian.payroll_payment_orchestrator.webhooks.application.WebhookDeliveryService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,15 +25,18 @@ public class PayrollBatchService implements PayrollBatchUseCase {
     private final PayrollBatchRepositoryPort repository;
     private final PayrollExecutionPublisherPort executionPublisher;
     private final AuditLogService auditLogService;
+    private final WebhookDeliveryService webhookDeliveryService;
 
     public PayrollBatchService(
             PayrollBatchRepositoryPort repository,
             PayrollExecutionPublisherPort executionPublisher,
-            AuditLogService auditLogService
+            AuditLogService auditLogService,
+            WebhookDeliveryService webhookDeliveryService
     ) {
         this.repository = repository;
         this.executionPublisher = executionPublisher;
         this.auditLogService = auditLogService;
+        this.webhookDeliveryService = webhookDeliveryService;
     }
 
     @Override
@@ -160,6 +164,7 @@ public class PayrollBatchService implements PayrollBatchUseCase {
         }
         PayrollBatch updated = repository.save(copyWithStatus(batch, PayrollBatchStatus.PAID, paymentsWithStatus(batch, PayrollPaymentStatus.PAID)));
         auditLogService.record("PAYROLL_BATCH_PAID", "PAYROLL_BATCH", updated.id(), "Payroll batch marked as paid");
+        webhookDeliveryService.publish(updated.companyId(), "payroll.batch.paid", updated.id(), updated);
         return updated;
     }
 
@@ -169,6 +174,7 @@ public class PayrollBatchService implements PayrollBatchUseCase {
         PayrollBatch batch = findById(batchId);
         PayrollBatch updated = repository.save(copyWithStatus(batch, PayrollBatchStatus.FAILED, paymentsWithStatus(batch, PayrollPaymentStatus.FAILED)));
         auditLogService.record("PAYROLL_BATCH_FAILED", "PAYROLL_BATCH", updated.id(), "Payroll batch failed. Reason: " + reason);
+        webhookDeliveryService.publish(updated.companyId(), "payroll.batch.failed", updated.id(), updated);
         return updated;
     }
 
