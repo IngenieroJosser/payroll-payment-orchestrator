@@ -5,6 +5,7 @@ import com.corvian.payroll_payment_orchestrator.payroll.domain.model.PayrollBatc
 import com.corvian.payroll_payment_orchestrator.payroll.infrastructure.mapper.PayrollBatchMapper;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -28,5 +29,10 @@ public class PayrollBatchRepositoryAdapter implements PayrollBatchRepositoryPort
     @Override
     public Optional<PayrollBatch> findById(UUID id) {
         return repository.findById(id).map(mapper::toDomain);
+    }
+
+    @Override
+    public List<PayrollBatch> findAll() {
+        return repository.findAll().stream().map(mapper::toDomain).toList();
     }
 }

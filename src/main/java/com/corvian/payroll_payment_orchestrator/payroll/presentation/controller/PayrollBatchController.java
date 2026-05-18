@@ -6,6 +6,7 @@ import com.corvian.payroll_payment_orchestrator.payroll.application.usecase.Payr
 import com.corvian.payroll_payment_orchestrator.payroll.domain.model.PayrollBatch;
 import com.corvian.payroll_payment_orchestrator.payroll.domain.model.PayrollPayment;
 import com.corvian.payroll_payment_orchestrator.payroll.presentation.request.CreatePayrollBatchRequest;
+import com.corvian.payroll_payment_orchestrator.payroll.presentation.request.RejectPayrollBatchRequest;
 import com.corvian.payroll_payment_orchestrator.payroll.presentation.response.PayrollBatchResponse;
 import com.corvian.payroll_payment_orchestrator.payroll.presentation.response.PayrollPaymentResponse;
 import com.corvian.payroll_payment_orchestrator.shared.response.ApiResponse;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -28,6 +30,11 @@ public class PayrollBatchController {
 
     public PayrollBatchController(PayrollBatchUseCase payrollBatchUseCase) {
         this.payrollBatchUseCase = payrollBatchUseCase;
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<PayrollBatchResponse>>> list() {
+        return ResponseEntity.ok(ApiResponse.ok(payrollBatchUseCase.findAll().stream().map(this::toResponse).toList()));
     }
 
     @PostMapping
@@ -49,6 +56,14 @@ public class PayrollBatchController {
     @PostMapping("/{batchId}/approve")
     public ResponseEntity<ApiResponse<PayrollBatchResponse>> approve(@PathVariable UUID batchId) {
         return ResponseEntity.ok(ApiResponse.ok(toResponse(payrollBatchUseCase.approve(batchId))));
+    }
+
+    @PostMapping("/{batchId}/reject")
+    public ResponseEntity<ApiResponse<PayrollBatchResponse>> reject(
+            @PathVariable UUID batchId,
+            @Valid @RequestBody RejectPayrollBatchRequest request
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(payrollBatchUseCase.reject(batchId, request.reason()))));
     }
 
     @PostMapping("/{batchId}/execute")
