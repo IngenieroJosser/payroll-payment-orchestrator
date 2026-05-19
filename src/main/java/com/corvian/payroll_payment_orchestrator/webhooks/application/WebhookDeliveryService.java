@@ -1,5 +1,6 @@
 package com.corvian.payroll_payment_orchestrator.webhooks.application;
 
+import com.corvian.payroll_payment_orchestrator.payroll.application.port.PayrollBatchRepositoryPort;
 import com.corvian.payroll_payment_orchestrator.webhooks.infrastructure.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.MediaType;
@@ -16,13 +17,21 @@ import java.util.UUID;
 public class WebhookDeliveryService {
     private final JpaWebhookEndpointRepository endpointRepository;
     private final JpaWebhookDeliveryAttemptRepository attemptRepository;
+    private final PayrollBatchRepositoryPort payrollBatchRepositoryPort;
     private final WebhookSigner signer;
     private final ObjectMapper objectMapper;
     private final RestClient restClient = RestClient.create();
 
-    public WebhookDeliveryService(JpaWebhookEndpointRepository endpointRepository, JpaWebhookDeliveryAttemptRepository attemptRepository, WebhookSigner signer, ObjectMapper objectMapper) {
+    public WebhookDeliveryService(
+            JpaWebhookEndpointRepository endpointRepository,
+            JpaWebhookDeliveryAttemptRepository attemptRepository,
+            PayrollBatchRepositoryPort payrollBatchRepositoryPort,
+            WebhookSigner signer,
+            ObjectMapper objectMapper
+    ) {
         this.endpointRepository = endpointRepository;
         this.attemptRepository = attemptRepository;
+        this.payrollBatchRepositoryPort = payrollBatchRepositoryPort;
         this.signer = signer;
         this.objectMapper = objectMapper;
     }
@@ -71,7 +80,14 @@ public class WebhookDeliveryService {
         attemptRepository.findTop50ByStatusAndNextRetryAtBeforeOrderByCreatedAtAsc("RETRY_PENDING", OffsetDateTime.now()).forEach(previous -> {
             endpointRepository.findById(previous.getWebhookEndpointId()).filter(WebhookEndpointEntity::getEnabled).ifPresent(endpoint -> {
                 if (previous.getAttempt() < 5) {
-                    deliver(endpoint, previous.getEvent(), previous.getResourceId(), Map.of("retry", true), previous.getAttempt() + 1);
+                    Object payloadData = Map.of("retry", true);
+                    if (payrollBatchRepositoryPort != null && previous.getEvent() != null && previous.getEvent().startsWith("payroll.batch") && previous.getResourceId() != null) {
+                        payloadData = payrollBatchRepositoryPort.findById(previous.getResourceId()).orElse(null);
+                        if (payloadData == null) {
+                            payloadData = Map.of("retry", true);
+                        }
+                    }
+                    deliver(endpoint, previous.getEvent(), previous.getResourceId(), payloadData, previous.getAttempt() + 1);
                     previous.setStatus("RETRIED");
                 } else {
                     previous.setStatus("FAILED");
