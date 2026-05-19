@@ -1,0 +1,589 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+		"name": "Payroll Payment Orchestrator (Manual)",
+		"description": "Colección completa para probar el orquestador de nómina con campos y valores de cabecera explícitos para reemplazo manual paso a paso.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Verificar API (Health Check)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/health",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"health"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2. Login Admin (Obtener JWT)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"description": "Formato JSON para el body.",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"email\": \"admin@corvian.local\",\n  \"password\": \"Admin123!\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/auth/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3. Crear Tenant",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "REEMPLAZAR_CON_EL_TOKEN_JWT_OBTENIDO_DE_LA_RESPUESTA_DEL_PASO_2",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Idempotency-Key",
+						"value": "CUALQUIER_CODIGO_UNICO_O_UUID_ALEATORIO",
+						"description": "Una cadena aleatoria única para prevenir procesamiento duplicado.",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Empresa Corporativa Demo\",\n  \"slug\": \"empresa-corporativa-demo\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/tenants",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"tenants"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "4. Crear Compañía",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "REEMPLAZAR_CON_EL_TOKEN_JWT_OBTENIDO_DE_LA_RESPUESTA_DEL_PASO_2",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Idempotency-Key",
+						"value": "CUALQUIER_CODIGO_UNICO_O_UUID_ALEATORIO",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"tenantId\": \"REEMPLAZAR_CON_EL_tenantId_DE_LA_RESPUESTA_DEL_PASO_3\",\n  \"legalName\": \"Servicios Digitales Corvian SAS\",\n  \"taxId\": \"900.456.123-9\",\n  \"currency\": \"COP\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/companies",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"companies"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "5. Crear Cuenta Bancaria Origen",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "REEMPLAZAR_CON_EL_TOKEN_JWT_OBTENIDO_DE_LA_RESPUESTA_DEL_PASO_2",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "Idempotency-Key",
+						"value": "CUALQUIER_CODIGO_UNICO_O_UUID_ALEATORIO",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"bankCode\": \"001\",\n  \"accountType\": \"CHECKING\",\n  \"accountNumber\": \"9876543210\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/companies/REEMPLAZAR_CON_EL_companyId_DE_LA_RESPUESTA_DEL_PASO_4/bank-accounts",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"companies",
+						"REEMPLAZAR_CON_EL_companyId_DE_LA_RESPUESTA_DEL_PASO_4",
+						"bank-accounts"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "6. Crear API Client (API Key B2B)",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "REEMPLAZAR_CON_EL_TOKEN_JWT_OBTENIDO_DE_LA_RESPUESTA_DEL_PASO_2",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"companyId\": \"REEMPLAZAR_CON_EL_companyId_DE_LA_RESPUESTA_DEL_PASO_4\",\n  \"name\": \"ERP Cliente Integracion\",\n  \"scopes\": [\"payroll:create\", \"payroll:read\", \"payroll:execute\"]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/iam/api-clients",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"iam",
+						"api-clients"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "7. Probar API Key Directa (Y Test de Rate Limiter)",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-API-KEY",
+						"value": "REEMPLAZAR_CON_EL_clientId.clientSecret_DEL_PASO_6",
+						"description": "API Key B2B. Formato: clientId.clientSecret (Ejemplo: cli_2f61a153.sec_6f8099c7d42e47858d46db15). ¡Esto reemplaza al token JWT corporativo!",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/tenants",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"tenants"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "8. Registrar Conexión Bancaria",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "X-API-KEY",
+						"value": "REEMPLAZAR_CON_EL_clientId.clientSecret_DEL_PASO_6",
+						"description": "API Key B2B de Integración.",
+						"type": "text"
+					},
+					{
+						"key": "Idempotency-Key",
+						"value": "CUALQUIER_CODIGO_UNICO_O_UUID_ALEATORIO",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"companyId\": \"REEMPLAZAR_CON_EL_companyId_DE_LA_RESPUESTA_DEL_PASO_4\",\n  \"bankCode\": \"001\",\n  \"baseUrl\": \"https://sandbox.bank.local\",\n  \"apiToken\": \"bank-sandbox-token-12345\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/bank-connections",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"bank-connections"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "9. Registrar Webhook Listener",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "X-API-KEY",
+						"value": "REEMPLAZAR_CON_EL_clientId.clientSecret_DEL_PASO_6",
+						"type": "text"
+					},
+					{
+						"key": "Idempotency-Key",
+						"value": "CUALQUIER_CODIGO_UNICO_O_UUID_ALEATORIO",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"url\": \"https://webhook.site/tu-codigo-temporal-aqui\",\n  \"secret\": \"webhook-signing-secret-key-999\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/companies/REEMPLAZAR_CON_EL_companyId_DE_LA_RESPUESTA_DEL_PASO_4/webhooks",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"companies",
+						"REEMPLAZAR_CON_EL_companyId_DE_LA_RESPUESTA_DEL_PASO_4",
+						"webhooks"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "10. Cargar Lote de Nómina (DRAFT)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					},
+					{
+						"key": "X-API-KEY",
+						"value": "REEMPLAZAR_CON_EL_clientId.clientSecret_DEL_PASO_6",
+						"type": "text"
+					},
+					{
+						"key": "Idempotency-Key",
+						"value": "CUALQUIER_CODIGO_UNICO_O_UUID_ALEATORIO",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"companyId\": \"REEMPLAZAR_CON_EL_companyId_DE_LA_RESPUESTA_DEL_PASO_4\",\n  \"sourceAccountId\": \"REEMPLAZAR_CON_EL_bankAccountId_DE_LA_RESPUESTA_DEL_PASO_5\",\n  \"currency\": \"COP\",\n  \"scheduledDate\": \"2026-06-01\",\n  \"payments\": [\n    {\n      \"employeeDocumentType\": \"CC\",\n      \"employeeDocumentNumber\": \"100200300\",\n      \"employeeFullName\": \"Josser Cordoba Rivas\",\n      \"bankCode\": \"001\",\n      \"accountType\": \"SAVINGS\",\n      \"accountNumber\": \"111222333\",\n      \"amount\": 3500000.00\n    },\n    {\n      \"employeeDocumentType\": \"CC\",\n      \"employeeDocumentNumber\": \"900800700\",\n      \"employeeFullName\": \"Flia Cordoba Rivas\",\n      \"bankCode\": \"001\",\n      \"accountType\": \"SAVINGS\",\n      \"accountNumber\": \"444555666\",\n      \"amount\": 4200000.00\n    }\n  ]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/v1/payroll-batches",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"payroll-batches"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "11. Validar Lote de Nómina",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-API-KEY",
+						"value": "REEMPLAZAR_CON_EL_clientId.clientSecret_DEL_PASO_6",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/payroll-batches/REEMPLAZAR_CON_EL_batchId_DE_LA_RESPUESTA_DEL_PASO_10/validate",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"payroll-batches",
+						"REEMPLAZAR_CON_EL_batchId_DE_LA_RESPUESTA_DEL_PASO_10",
+						"validate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "12. Aprobar Lote de Nómina",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-API-KEY",
+						"value": "REEMPLAZAR_CON_EL_clientId.clientSecret_DEL_PASO_6",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/payroll-batches/REEMPLAZAR_CON_EL_batchId_DE_LA_RESPUESTA_DEL_PASO_10/approve",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"payroll-batches",
+						"REEMPLAZAR_CON_EL_batchId_DE_LA_RESPUESTA_DEL_PASO_10",
+						"approve"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "13. Ejecutar Lote de Nómina (Dispersión)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "X-API-KEY",
+						"value": "REEMPLAZAR_CON_EL_clientId.clientSecret_DEL_PASO_6",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/payroll-batches/REEMPLAZAR_CON_EL_batchId_DE_LA_RESPUESTA_DEL_PASO_10/execute",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"payroll-batches",
+						"REEMPLAZAR_CON_EL_batchId_DE_LA_RESPUESTA_DEL_PASO_10",
+						"execute"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "14. Consultar Lote de Nómina (Estado actual)",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-API-KEY",
+						"value": "REEMPLAZAR_CON_EL_clientId.clientSecret_DEL_PASO_6",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/payroll-batches/REEMPLAZAR_CON_EL_batchId_DE_LA_RESPUESTA_DEL_PASO_10",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"payroll-batches",
+						"REEMPLAZAR_CON_EL_batchId_DE_LA_RESPUESTA_DEL_PASO_10"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "15. Consultar Auditoría (Logs)",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "X-API-KEY",
+						"value": "REEMPLAZAR_CON_EL_clientId.clientSecret_DEL_PASO_6",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/api/v1/audit-logs?resourceId=REEMPLAZAR_CON_EL_batchId_DE_LA_RESPUESTA_DEL_PASO_10",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"v1",
+						"audit-logs"
+					],
+					"query": [
+						{
+							"key": "resourceId",
+							"value": "REEMPLAZAR_CON_EL_batchId_DE_LA_RESPUESTA_DEL_PASO_10"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
