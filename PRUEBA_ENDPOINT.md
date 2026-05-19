@@ -1315,7 +1315,60 @@ Ejemplo: ejecutar un batch que todavia esta en `DRAFT`.
 
 Resultado esperado: `400 Bad Request`, error de estado invalido.
 
-## 9. Checklist completa
+## 10. Control de Ejecuciones, API Key Token & Rate Limiting
+
+### 10.1. Autenticación Directa por API Key (Sin Credenciales)
+Para simplificar la integración B2B de sistemas externos (CRM/ERP), ahora puedes realizar peticiones directamente utilizando tu API Key sin necesidad de iniciar sesión previamente o intercambiar credenciales para obtener un JWT temporal.
+
+Soporta dos métodos de envío:
+1. **Header `Authorization: ApiKey <clientId>.<clientSecret>`** (o `<clientId>:<clientSecret>`)
+2. **Header `X-API-KEY: <clientId>.<clientSecret>`** (o `<clientId>:<clientSecret>`)
+
+#### Ejemplo de Petición con API Key en cURL:
+```bash
+curl -X GET http://localhost:8080/api/v1/tenants \
+  -H "Authorization: ApiKey cli_A1b2C3d4E5f6G7h8I9.sec_J0k1L2m3N4o5P6q7R8s9T0u1V2w3X4y5Z6"
+```
+
+O usando el header personalizado:
+```bash
+curl -X GET http://localhost:8080/api/v1/tenants \
+  -H "X-API-KEY: cli_A1b2C3d4E5f6G7h8I9.sec_J0k1L2m3N4o5P6q7R8s9T0u1V2w3X4y5Z6"
+```
+
+---
+
+### 10.2. Protección Anti-Estrés y Control de Concurrencia (Rate Limiting)
+El orquestador de pagos de nómina implementa un sistema inteligente de control de flujo por ventana deslizante para evitar caídas o denegaciones de servicio (DoS) cuando un cliente realiza ráfagas masivas (e.g. 10,000 peticiones en segundos).
+
+#### Reglas de Negocio:
+1. **Ventana Temporal y Límite:** Máximo **20 solicitudes en 5 segundos** por cada Token / API Key (o IP si no está autenticado).
+2. **Encolamiento / Throttling Activo (Soft Limit):** A partir de la **solicitud 10** dentro de la ventana de 5 segundos, el sistema entra en modo de amortiguación (queueing). Las solicitudes subsiguientes son retrasadas en el hilo del servlet de forma progresiva (`delay = (solicitudesExcess) * 250ms`) para suavizar la carga sobre la base de datos y servicios bancarios.
+3. **Bloqueo Defensivo (Hard Limit):** Si se superan las **20 solicitudes** en la ventana de 5 segundos, la petición se bloquea de inmediato con HTTP Status `429 Too Many Requests` para garantizar la estabilidad del sistema y evitar el desbordamiento de hilos del servidor.
+
+#### Headers de Control Retornados:
+En cada respuesta exitosa o fallida, el sistema inyecta headers HTTP informativos:
+* `X-RateLimit-Limit`: `20` (Límite máximo permitido en la ventana).
+* `X-RateLimit-Remaining`: Cantidad de peticiones restantes seguras.
+* `X-RateLimit-Reset`: `5` (Duración de la ventana en segundos).
+* `X-RateLimit-Throttled`: `true` / `false` (Indica si la solicitud fue encolada/ralentizada).
+* `X-RateLimit-Throttle-Delay-Ms`: Tiempo en milisegundos que estuvo encolada (solo si `X-RateLimit-Throttled` es `true`).
+
+#### Ejemplo de Respuesta de Bloqueo por Exceso de Peticiones (`429 Too Many Requests`):
+```json
+{
+  "success": false,
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "Rate limit of 20 requests per 5 seconds exceeded. Flood protection active.",
+    "details": [
+      "Requests in last 5 seconds: 20"
+    ]
+  }
+}
+```
+
+## 11. Checklist completa
 
 ```text
 [ ] GET  /api/v1/health
