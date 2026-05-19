@@ -17,7 +17,6 @@ import java.util.concurrent.*;
 
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
-    private final SecurityProperties properties;
     private final Map<String, RateLimitBucket> buckets = new ConcurrentHashMap<>();
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
         Thread thread = new Thread(runnable, "rate-limit-cleaner");
@@ -25,8 +24,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         return thread;
     });
 
-    public RateLimitFilter(SecurityProperties properties) {
-        this.properties = properties;
+    public RateLimitFilter() {
         // Schedule cleanup every 1 minute
         this.scheduler.scheduleAtFixedRate(this::pruneExpiredBuckets, 1, 1, TimeUnit.MINUTES);
     }

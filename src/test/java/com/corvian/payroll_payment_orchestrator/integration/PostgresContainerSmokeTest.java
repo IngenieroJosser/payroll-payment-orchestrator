@@ -12,6 +12,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers
 class PostgresContainerSmokeTest {
     @Container
+    @SuppressWarnings("resource")
     static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16")
             .withDatabaseName("payroll-payment-orchestrator")
             .withUsername("payroll_user")
