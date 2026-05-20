@@ -2,6 +2,9 @@ package com.corvian.payroll_payment_orchestrator.payroll.presentation.controller
 
 import com.corvian.payroll_payment_orchestrator.payroll.application.command.CreatePayrollBatchCommand;
 import com.corvian.payroll_payment_orchestrator.payroll.application.command.CreatePayrollPaymentCommand;
+import com.corvian.payroll_payment_orchestrator.payroll.application.port.in.CreatePayrollBatchUseCase;
+import com.corvian.payroll_payment_orchestrator.payroll.application.port.in.ApprovePayrollBatchUseCase;
+import com.corvian.payroll_payment_orchestrator.payroll.application.port.in.ExecutePayrollBatchUseCase;
 import com.corvian.payroll_payment_orchestrator.payroll.application.usecase.PayrollBatchUseCase;
 import com.corvian.payroll_payment_orchestrator.payroll.domain.model.PayrollBatch;
 import com.corvian.payroll_payment_orchestrator.payroll.domain.model.PayrollPayment;
@@ -27,9 +30,20 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/payroll-batches")
 public class PayrollBatchController {
+    private final CreatePayrollBatchUseCase createPayrollBatchUseCase;
+    private final ApprovePayrollBatchUseCase approvePayrollBatchUseCase;
+    private final ExecutePayrollBatchUseCase executePayrollBatchUseCase;
     private final PayrollBatchUseCase payrollBatchUseCase;
 
-    public PayrollBatchController(PayrollBatchUseCase payrollBatchUseCase) {
+    public PayrollBatchController(
+            CreatePayrollBatchUseCase createPayrollBatchUseCase,
+            ApprovePayrollBatchUseCase approvePayrollBatchUseCase,
+            ExecutePayrollBatchUseCase executePayrollBatchUseCase,
+            PayrollBatchUseCase payrollBatchUseCase
+    ) {
+        this.createPayrollBatchUseCase = createPayrollBatchUseCase;
+        this.approvePayrollBatchUseCase = approvePayrollBatchUseCase;
+        this.executePayrollBatchUseCase = executePayrollBatchUseCase;
         this.payrollBatchUseCase = payrollBatchUseCase;
     }
 
@@ -42,7 +56,7 @@ public class PayrollBatchController {
     @PostMapping
     @PreAuthorize("hasAuthority('payroll:create')")
     public ResponseEntity<ApiResponse<PayrollBatchResponse>> create(@Valid @RequestBody CreatePayrollBatchRequest request) {
-        PayrollBatch createdBatch = payrollBatchUseCase.create(toCommand(request));
+        PayrollBatch createdBatch = createPayrollBatchUseCase.create(toCommand(request));
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(toResponse(createdBatch)));
     }
 
@@ -61,7 +75,7 @@ public class PayrollBatchController {
     @PostMapping("/{batchId}/approve")
     @PreAuthorize("hasAuthority('payroll:approve')")
     public ResponseEntity<ApiResponse<PayrollBatchResponse>> approve(@PathVariable UUID batchId) {
-        return ResponseEntity.ok(ApiResponse.ok(toResponse(payrollBatchUseCase.approve(batchId))));
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(approvePayrollBatchUseCase.approve(batchId))));
     }
 
     @PostMapping("/{batchId}/reject")
@@ -70,13 +84,13 @@ public class PayrollBatchController {
             @PathVariable UUID batchId,
             @Valid @RequestBody RejectPayrollBatchRequest request
     ) {
-        return ResponseEntity.ok(ApiResponse.ok(toResponse(payrollBatchUseCase.reject(batchId, request.reason()))));
+        return ResponseEntity.ok(ApiResponse.ok(toResponse(approvePayrollBatchUseCase.reject(batchId, request.reason()))));
     }
 
     @PostMapping("/{batchId}/execute")
     @PreAuthorize("hasAuthority('payroll:execute')")
     public ResponseEntity<ApiResponse<PayrollBatchResponse>> execute(@PathVariable UUID batchId) {
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body(ApiResponse.ok(toResponse(payrollBatchUseCase.execute(batchId))));
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(ApiResponse.ok(toResponse(executePayrollBatchUseCase.execute(batchId))));
     }
 
     private CreatePayrollBatchCommand toCommand(CreatePayrollBatchRequest request) {
