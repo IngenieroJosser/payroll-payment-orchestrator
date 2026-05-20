@@ -32,4 +32,10 @@ public class IdempotencyKeyEntity {
 
     @Column(name = "expires_at", nullable = false)
     private OffsetDateTime expiresAt;
+
+    @Column(name = "response_body")
+    private String responseBody;
+
+    @Column(name = "locked", nullable = false)
+    private boolean locked;
 }
