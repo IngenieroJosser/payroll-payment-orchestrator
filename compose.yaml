@@ -1,16 +1,51 @@
+version: '3.8'
+
 services:
   postgres:
-    image: 'postgres:latest'
+    image: 'josser00/postgres:latest'
     environment:
-      - 'POSTGRES_DB=payroll-payment-orchestrator'
-      - 'POSTGRES_PASSWORD=secret'
-      - 'POSTGRES_USER=postgres'
+      - POSTGRES_DB=payroll-payment-orchestrator
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_USER=postgres
     ports:
-      - '5432'
+      - '5432:5432'
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
+
   rabbitmq:
-    image: 'rabbitmq:latest'
+    image: 'josser00/rabbitmq:latest'
     environment:
-      - 'RABBITMQ_DEFAULT_PASS=secret'
-      - 'RABBITMQ_DEFAULT_USER=postgres'
+      - RABBITMQ_DEFAULT_USER=postgres
+      - RABBITMQ_DEFAULT_PASS=secret
     ports:
-      - '5672'
+      - '5672:5672'
+      - '15672:15672' # opcional, web UI
+    restart: always
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
+
+  payroll-backend:
+    image: 'josser00/payroll-backend:latest' # reemplaza con tu imagen del backend si la subes
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payroll-payment-orchestrator
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: secret
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: postgres
+      SPRING_RABBITMQ_PASSWORD: secret
+    ports:
+      - '8080:8080'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: always
