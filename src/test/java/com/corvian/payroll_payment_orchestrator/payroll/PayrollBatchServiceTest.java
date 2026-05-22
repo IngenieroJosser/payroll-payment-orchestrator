@@ -10,6 +10,7 @@ import com.corvian.payroll_payment_orchestrator.payroll.application.port.in.Exec
 import com.corvian.payroll_payment_orchestrator.payroll.application.usecase.PayrollBatchService;
 import com.corvian.payroll_payment_orchestrator.payroll.domain.enums.AccountType;
 import com.corvian.payroll_payment_orchestrator.payroll.domain.enums.PayrollBatchStatus;
+import com.corvian.payroll_payment_orchestrator.payroll.domain.enums.PayrollPaymentStatus;
 import com.corvian.payroll_payment_orchestrator.payroll.domain.model.PayrollBatch;
 import com.corvian.payroll_payment_orchestrator.payroll.domain.model.PayrollPayment;
 import com.corvian.payroll_payment_orchestrator.webhooks.application.WebhookDeliveryService;
@@ -45,10 +46,14 @@ class PayrollBatchServiceTest {
             List<PayrollPayment> payments = cmd.payments().stream()
                     .map(p -> new PayrollPayment(
                             UUID.randomUUID(),
+                            p.employeeDocumentType(),
+                            p.employeeDocumentNumber(),
+                            p.employeeFullName(),
+                            p.bankCode(),
                             p.accountType(),
                             p.accountNumber(),
                             p.amount(),
-                            p.employeeName()
+                            PayrollPaymentStatus.DRAFT
                     ))
                     .toList();
 
