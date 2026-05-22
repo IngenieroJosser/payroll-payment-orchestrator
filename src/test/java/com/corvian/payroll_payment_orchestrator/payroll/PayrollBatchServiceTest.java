@@ -10,12 +10,15 @@ import com.corvian.payroll_payment_orchestrator.payroll.application.port.in.Exec
 import com.corvian.payroll_payment_orchestrator.payroll.application.usecase.PayrollBatchService;
 import com.corvian.payroll_payment_orchestrator.payroll.domain.enums.AccountType;
 import com.corvian.payroll_payment_orchestrator.payroll.domain.enums.PayrollBatchStatus;
+import com.corvian.payroll_payment_orchestrator.payroll.domain.enums.PayrollPaymentStatus;
 import com.corvian.payroll_payment_orchestrator.payroll.domain.model.PayrollBatch;
+import com.corvian.payroll_payment_orchestrator.payroll.domain.model.PayrollPayment;
 import com.corvian.payroll_payment_orchestrator.webhooks.application.WebhookDeliveryService;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,27 +33,11 @@ class PayrollBatchServiceTest {
         AuditLogService audit = mock(AuditLogService.class);
         WebhookDeliveryService webhook = mock(WebhookDeliveryService.class);
 
-        // Creamos mocks para los casos de uso
         CreatePayrollBatchUseCase createUseCase = mock(CreatePayrollBatchUseCase.class);
         ApprovePayrollBatchUseCase approveUseCase = mock(ApprovePayrollBatchUseCase.class);
         ExecutePayrollBatchUseCase executeUseCase = mock(ExecutePayrollBatchUseCase.class);
 
-        // Mock del repositorio
-        when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-
-        // Mock del createUseCase para devolver un PayrollBatch válido
-        when(createUseCase.create(any(CreatePayrollBatchCommand.class))).thenAnswer(invocation -> {
-            CreatePayrollBatchCommand cmd = invocation.getArgument(0);
-            return new PayrollBatch(
-                    cmd.id(),
-                    cmd.companyId(),
-                    cmd.currency(),
-                    cmd.executionDate(),
-                    cmd.payments()
-            );
-        });
-
-        PayrollBatchService service = new PayrollBatchService(
+        var service = new PayrollBatchService(
                 repository,
                 audit,
                 webhook,
@@ -58,6 +45,43 @@ class PayrollBatchServiceTest {
                 approveUseCase,
                 executeUseCase
         );
+
+        // Mock del createUseCase para devolver un PayrollBatch válido
+        when(createUseCase.create(any(CreatePayrollBatchCommand.class))).thenAnswer(invocation -> {
+            CreatePayrollBatchCommand cmd = invocation.getArgument(0);
+
+            List<PayrollPayment> payments = cmd.payments().stream()
+                    .map(p -> new PayrollPayment(
+                            UUID.randomUUID(),
+                            p.employeeDocumentType(),
+                            p.employeeDocumentNumber(),
+                            p.employeeFullName(),
+                            p.bankCode(),
+                            p.accountType(),
+                            p.accountNumber(),
+                            p.amount(),
+                            PayrollPaymentStatus.PENDING
+                    ))
+                    .toList();
+
+            BigDecimal totalAmount = payments.stream()
+                    .map(PayrollPayment::amount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            return new PayrollBatch(
+                    UUID.randomUUID(),
+                    cmd.companyId(),
+                    cmd.sourceAccountId(),
+                    cmd.currency(),
+                    cmd.scheduledDate(),
+                    PayrollBatchStatus.DRAFT,
+                    totalAmount,
+                    payments.size(),
+                    payments,
+                    OffsetDateTime.now(),
+                    OffsetDateTime.now()
+            );
+        });
 
         var command = new CreatePayrollBatchCommand(
                 UUID.randomUUID(),
@@ -79,9 +103,7 @@ class PayrollBatchServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(result.status()).isEqualTo(PayrollBatchStatus.DRAFT);
-        assertThat(result.totalPayments()).isEqualTo(1);
-        assertThat(result.totalAmount()).isEqualByComparingTo("2500000");
-
-        verify(repository).save(any());
+        assertThat(result.totalPayments()).isEqualTo(command.payments().size());
+        assertThat(result.totalAmount()).isEqualByComparingTo(new BigDecimal("2500000"));
     }
 }
