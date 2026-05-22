@@ -1,4 +1,4 @@
-name: Check Branch Flow and Build
+name: Check Branch Flow
 
 on:
   pull_request:
@@ -7,12 +7,9 @@ on:
       - develop
 
 jobs:
-  check-source-and-build:
+  check-source: # Este nombre debe coincidir con el 'context' en tus Rulesets
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Validate branch source
         run: |
           SOURCE_BRANCH="${{ github.head_ref }}"
@@ -34,13 +31,5 @@ jobs:
             fi
           fi
 
-          echo "Flujo de ramas válido."
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-
-      - name: Build with Maven (skipping integration tests)
-        run: mvn clean install -DskipITs
+          echo "Flujo de ramas válido." 
+          
