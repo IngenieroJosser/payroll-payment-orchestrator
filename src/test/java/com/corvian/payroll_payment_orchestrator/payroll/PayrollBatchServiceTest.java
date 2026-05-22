@@ -43,6 +43,7 @@ class PayrollBatchServiceTest {
         when(createUseCase.create(any(CreatePayrollBatchCommand.class))).thenAnswer(invocation -> {
             CreatePayrollBatchCommand cmd = invocation.getArgument(0);
 
+            // Convertir los comandos de pago en PayrollPayment con estado PENDING
             List<PayrollPayment> payments = cmd.payments().stream()
                     .map(p -> new PayrollPayment(
                             UUID.randomUUID(),
@@ -53,7 +54,7 @@ class PayrollBatchServiceTest {
                             p.accountType(),
                             p.accountNumber(),
                             p.amount(),
-                            PayrollPaymentStatus.DRAFT
+                            PayrollPaymentStatus.PENDING
                     ))
                     .toList();
 
