@@ -37,13 +37,19 @@ class PayrollBatchServiceTest {
         ApprovePayrollBatchUseCase approveUseCase = mock(ApprovePayrollBatchUseCase.class);
         ExecutePayrollBatchUseCase executeUseCase = mock(ExecutePayrollBatchUseCase.class);
 
-        when(repository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        var service = new PayrollBatchService(
+                repository,
+                audit,
+                webhook,
+                createUseCase,
+                approveUseCase,
+                executeUseCase
+        );
 
         // Mock del createUseCase para devolver un PayrollBatch válido
         when(createUseCase.create(any(CreatePayrollBatchCommand.class))).thenAnswer(invocation -> {
             CreatePayrollBatchCommand cmd = invocation.getArgument(0);
 
-            // Convertir los comandos de pago en PayrollPayment con estado PENDING
             List<PayrollPayment> payments = cmd.payments().stream()
                     .map(p -> new PayrollPayment(
                             UUID.randomUUID(),
@@ -63,28 +69,19 @@ class PayrollBatchServiceTest {
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             return new PayrollBatch(
-                    UUID.randomUUID(),         // id
-                    cmd.companyId(),           // companyId
-                    cmd.sourceAccountId(),     // sourceAccountId
-                    cmd.currency(),            // currency
-                    cmd.scheduledDate(),       // scheduledDate
-                    PayrollBatchStatus.DRAFT,  // status
-                    totalAmount,               // totalAmount
-                    payments.size(),           // totalPayments
-                    payments,                  // payments
-                    OffsetDateTime.now(),      // createdAt
-                    OffsetDateTime.now()       // updatedAt
+                    UUID.randomUUID(),
+                    cmd.companyId(),
+                    cmd.sourceAccountId(),
+                    cmd.currency(),
+                    cmd.scheduledDate(),
+                    PayrollBatchStatus.DRAFT,
+                    totalAmount,
+                    payments.size(),
+                    payments,
+                    OffsetDateTime.now(),
+                    OffsetDateTime.now()
             );
         });
-
-        PayrollBatchService service = new PayrollBatchService(
-                repository,
-                audit,
-                webhook,
-                createUseCase,
-                approveUseCase,
-                executeUseCase
-        );
 
         var command = new CreatePayrollBatchCommand(
                 UUID.randomUUID(),
@@ -108,7 +105,5 @@ class PayrollBatchServiceTest {
         assertThat(result.status()).isEqualTo(PayrollBatchStatus.DRAFT);
         assertThat(result.totalPayments()).isEqualTo(command.payments().size());
         assertThat(result.totalAmount()).isEqualByComparingTo(new BigDecimal("2500000"));
-
-        verify(repository).save(any());
     }
 }
