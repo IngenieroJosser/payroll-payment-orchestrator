@@ -42,10 +42,10 @@ class PayrollBatchServiceTest {
         when(createUseCase.create(any(CreatePayrollBatchCommand.class))).thenAnswer(invocation -> {
             CreatePayrollBatchCommand cmd = invocation.getArgument(0);
             return new PayrollBatch(
-                    cmd.id(),
                     cmd.companyId(),
+                    cmd.sourceAccountId(),
                     cmd.currency(),
-                    cmd.executionDate(),
+                    cmd.scheduledDate(),
                     cmd.payments()
             );
         });
@@ -79,8 +79,11 @@ class PayrollBatchServiceTest {
 
         assertThat(result).isNotNull();
         assertThat(result.status()).isEqualTo(PayrollBatchStatus.DRAFT);
-        assertThat(result.totalPayments()).isEqualTo(1);
-        assertThat(result.totalAmount()).isEqualByComparingTo("2500000");
+        assertThat(result.totalPayments()).isEqualTo(command.payments().size());
+        BigDecimal totalAmount = command.payments().stream()
+                .map(CreatePayrollPaymentCommand::amount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        assertThat(result.totalAmount()).isEqualByComparingTo(totalAmount);
 
         verify(repository).save(any());
     }
