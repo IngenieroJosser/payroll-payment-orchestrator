@@ -65,18 +65,16 @@ public class IdempotencyFilter extends OncePerRequestFilter {
                 (request.getQueryString() == null ? "" : request.getQueryString()) + "\nBody: " + bodyStr;
         String requestHash = cryptoService.hmacSha256(fingerprint);
 
-        // Intentar leer respuesta existente (Replay)
-        String cachedResponse = storePort.getResponse(key, endpoint);
-        if (cachedResponse != null) {
-            response.setStatus(200);
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-            response.getWriter().write(cachedResponse);
-            return;
-        }
-
-        // Adquirir bloqueo idempotente
         try {
+            String cachedResponse = storePort.getResponse(key, endpoint, requestHash);
+            if (cachedResponse != null) {
+                response.setStatus(200);
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                response.getWriter().write(cachedResponse);
+                return;
+            }
+
             boolean locked = storePort.lock(key, endpoint, requestHash);
             if (!locked) {
                 response.setStatus(409);
@@ -163,4 +161,3 @@ public class IdempotencyFilter extends OncePerRequestFilter {
         }
     }
 }
-

@@ -39,6 +39,8 @@ public class PayrollExecutionConsumer {
             ));
             log.info("Payroll batch sent to bank. batchId={}, externalBatchId={}", batchId, response.externalBatchId());
             payrollBatchUseCase.markAsSentToBank(batchId);
+            // TODO Phase 2: replace this immediate PAID transition with bank
+            // confirmation through polling or signed callbacks before reconciliation.
             payrollBatchUseCase.markAsPaid(batchId);
         } catch (Exception exception) {
             log.error("Payroll execution failed. batchId={}", batchId, exception);
