@@ -34,4 +34,13 @@ public class AuditLogEntity {
 
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
+
+    @Column(nullable = false, length = 120)
+    private String actor;
+
+    @Column(name = "correlation_id", length = 128)
+    private String correlationId;
+
+    @Column(name = "client_ip", length = 45)
+    private String clientIp;
 }

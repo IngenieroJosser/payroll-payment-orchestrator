@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -22,15 +23,20 @@ public class DatabaseIdempotencyAdapter implements IdempotencyStorePort {
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean lock(String key, String endpoint, String requestHash) {
-        Optional<IdempotencyKeyEntity> existing = repository.findByIdempotencyKeyAndEndpoint(key, endpoint);
+        Optional<IdempotencyKeyEntity> existing = repository.findForUpdateByIdempotencyKeyAndEndpoint(key, endpoint);
         if (existing.isPresent()) {
             IdempotencyKeyEntity entity = existing.get();
-            if (!entity.getRequestHash().equals(requestHash)) {
+            if (!Objects.equals(entity.getRequestHash(), requestHash)) {
                 throw new DomainException("IDEMPOTENCY_KEY_REUSED", "Idempotency-Key was reused with a different request");
             }
-            return false; // key is either locked or completed
+            if (entity.isLocked() || hasStoredResponse(entity)) {
+                return false;
+            }
+            entity.setLocked(true);
+            repository.saveAndFlush(entity);
+            return true;
         }
-        
+
         try {
             IdempotencyKeyEntity entity = new IdempotencyKeyEntity();
             entity.setId(UUID.randomUUID());
@@ -49,16 +55,24 @@ public class DatabaseIdempotencyAdapter implements IdempotencyStorePort {
 
     @Override
     @Transactional(readOnly = true)
-    public String getResponse(String key, String endpoint) {
+    public String getResponse(String key, String endpoint, String requestHash) {
         return repository.findByIdempotencyKeyAndEndpoint(key, endpoint)
-                .map(IdempotencyKeyEntity::getResponseBody)
+                .map(entity -> {
+                    if (!Objects.equals(entity.getRequestHash(), requestHash)) {
+                        throw new DomainException("IDEMPOTENCY_KEY_REUSED", "Idempotency-Key was reused with a different request");
+                    }
+                    if (entity.isLocked() || !hasStoredResponse(entity)) {
+                        return null;
+                    }
+                    return entity.getResponseBody();
+                })
                 .orElse(null);
     }
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void saveResponse(String key, String endpoint, String responseBody, int ttlHours) {
-        repository.findByIdempotencyKeyAndEndpoint(key, endpoint).ifPresent(entity -> {
+        repository.findForUpdateByIdempotencyKeyAndEndpoint(key, endpoint).ifPresent(entity -> {
             entity.setResponseBody(responseBody);
             entity.setLocked(false);
             entity.setExpiresAt(OffsetDateTime.now().plusHours(ttlHours));
@@ -69,10 +83,14 @@ public class DatabaseIdempotencyAdapter implements IdempotencyStorePort {
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void unlock(String key, String endpoint) {
-        repository.findByIdempotencyKeyAndEndpoint(key, endpoint).ifPresent(entity -> {
+        repository.findForUpdateByIdempotencyKeyAndEndpoint(key, endpoint).ifPresent(entity -> {
             if (entity.isLocked() && entity.getResponseBody() == null) {
                 repository.delete(entity);
             }
         });
+    }
+
+    private boolean hasStoredResponse(IdempotencyKeyEntity entity) {
+        return entity.getResponseBody() != null;
     }
 }

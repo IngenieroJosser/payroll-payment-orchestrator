@@ -1,0 +1,1476 @@
+MASTER PROMPT — PAYROLL PAYMENT ORCHESTRATOR
+Transformación a middleware financiero B2B multi-banco production-ready
+
+Actúa como arquitecto de software senior, backend engineer financiero, especialista en Spring Boot, seguridad bancaria, arquitectura hexagonal, integración B2B, pagos empresariales, conciliación bancaria, observabilidad, CI/CD y pruebas de software.
+
+Tengo un backend llamado `Payroll Payment Orchestrator`, desarrollado en Java y Spring Boot. Su naturaleza es la de una plataforma middleware financiera B2B para conectar empresas con bancos y permitir la orquestación, validación, aprobación, procesamiento, auditoría y conciliación de lotes de pago de nómina mediante API REST.
+
+El objetivo NO es crear una API CRUD básica. El objetivo es transformar este backend en una plataforma bancaria B2B seria, vendible y llamativa para bancos, fintechs y empresas medianas/grandes, con una arquitectura preparada para producción, integración limpia con sistemas existentes, seguridad fuerte, trazabilidad completa, adaptabilidad multi-banco y operación auditable.
+
+Necesito que analices TODO el proyecto existente antes de modificarlo. No borres funcionalidades actuales si no es estrictamente necesario. Refactoriza con criterio profesional. Mantén compatibilidad donde sea razonable. Si encuentras código incompleto, simulado, acoplado o débil, mejóralo con una solución production-ready o deja una interfaz clara con implementación extensible.
+
+---
+
+# 1. Objetivo principal del cambio
+
+Fortalecer el backend para que pase de ser un prototipo funcional de orquestación de nómina a una plataforma middleware financiera B2B con las siguientes capacidades:
+
+- Integración multi-banco mediante arquitectura multi-adaptador.
+- Procesamiento seguro de lotes de nómina.
+- Estados financieros realistas por lote y por pago individual.
+- Idempotencia robusta para evitar pagos duplicados.
+- Auditoría completa y trazabilidad end-to-end.
+- Conciliación bancaria avanzada.
+- Seguridad bancaria de producción.
+- Multi-tenancy empresarial.
+- Aprobaciones tipo maker-checker.
+- Webhooks seguros y resilientes.
+- Observabilidad con logs, métricas y trazas.
+- Pruebas unitarias, integración, contrato y E2E.
+- CI/CD profesional.
+- Documentación técnica, funcional y comercial para bancos.
+
+---
+
+# 2. Principios arquitectónicos obligatorios
+
+Trabaja con los siguientes principios:
+
+- Clean Architecture.
+- Arquitectura hexagonal / ports and adapters.Ya tienes el Master Prompt completo del proyecto `Payroll Payment Orchestrator`.
+
+IMPORTANTE:
+No implementes todo de una sola vez.
+
+Primero quiero que analices el repositorio completo y entiendas la arquitectura actual antes de modificar código.
+
+Tu tarea inicial es entregar un diagnóstico técnico con:
+
+1. Estado actual del backend.
+2. Módulos existentes.
+3. Arquitectura actual.
+4. Qué partes ya están bien.
+5. Qué partes están incompletas, acopladas o débiles.
+6. Riesgos técnicos actuales.
+7. Riesgos financieros/operativos actuales.
+8. Riesgos de seguridad actuales.
+9. Riesgos de integración bancaria.
+10. Qué funcionalidades actuales NO deben romperse.
+11. Plan de implementación por fases.
+12. Archivos que tocarías primero.
+13. Migraciones que probablemente serán necesarias.
+14. Pruebas necesarias.
+15. Orden recomendado para implementar sin romper el proyecto.
+
+Restricciones:
+
+- No modifiques código todavía.
+- No agregues endpoints todavía.
+- No refactorices todavía.
+- No elimines funcionalidades existentes.
+- No inventes integraciones reales con bancos.
+- No hardcodees secretos.
+- No hagas cambios masivos.
+- No propongas una reescritura completa si se puede evolucionar el proyecto.
+
+Entrega el diagnóstico en formato profesional, separando:
+
+- Diagnóstico técnico.
+- Diagnóstico financiero-operativo.
+- Diagnóstico de seguridad.
+- Diagnóstico de arquitectura.
+- Roadmap por fases.
+- Riesgos y recomendaciones.
+- Separación estricta entre dominio, aplicación, infraestructura y exposición REST.
+- Dominio financiero expresivo, no anémico.
+- Interfaces para integraciones bancarias.
+- Adaptadores reemplazables por banco.
+- Bajo acoplamiento.
+- Alta cohesión.
+- Idempotencia por diseño.Ya tienes el Master Prompt completo del proyecto `Payroll Payment Orchestrator`.
+
+IMPORTANTE:
+No implementes todo de una sola vez.
+
+Primero quiero que analices el repositorio completo y entiendas la arquitectura actual antes de modificar código.
+
+Tu tarea inicial es entregar un diagnóstico técnico con:
+
+1. Estado actual del backend.
+2. Módulos existentes.
+3. Arquitectura actual.
+4. Qué partes ya están bien.
+5. Qué partes están incompletas, acopladas o débiles.
+6. Riesgos técnicos actuales.
+7. Riesgos financieros/operativos actuales.
+8. Riesgos de seguridad actuales.
+9. Riesgos de integración bancaria.
+10. Qué funcionalidades actuales NO deben romperse.
+11. Plan de implementación por fases.
+12. Archivos que tocarías primero.
+13. Migraciones que probablemente serán necesarias.
+14. Pruebas necesarias.
+15. Orden recomendado para implementar sin romper el proyecto.
+
+Restricciones:
+
+- No modifiques código todavía.
+- No agregues endpoints todavía.
+- No refactorices todavía.
+- No elimines funcionalidades existentes.
+- No inventes integraciones reales con bancos.
+- No hardcodees secretos.
+- No hagas cambios masivos.
+- No propongas una reescritura completa si se puede evolucionar el proyecto.
+
+Entrega el diagnóstico en formato profesional, separando:
+
+- Diagnóstico técnico.
+- Diagnóstico financiero-operativo.
+- Diagnóstico de seguridad.
+- Diagnóstico de arquitectura.
+- Roadmap por fases.
+- Riesgos y recomendaciones.
+- Auditoría como capacidad transversal.
+- Observabilidad desde el inicio.
+- Configuración por tenant, empresa y banco.
+- Código mantenible, legible y testeable.
+- No hardcodear secretos.
+- No usar valores inseguros por defecto en producción.
+- No mezclar lógica bancaria con controladores REST.
+- No acoplar el dominio a Spring directamente si puede evitarse.
+
+---
+
+# 3. Capa bancaria multi-adaptador — PRIORIDAD MÁXIMA
+
+Implementa o refactoriza una capa bancaria multi-adaptador robusta.
+
+Debe existir un puerto principal de dominio/aplicación similar a:
+
+```java
+public interface BankPaymentProvider {
+    BankSubmissionResult submitPayrollBatch(BankSubmissionCommand command);
+    BankPaymentStatusResult getBatchStatus(BankStatusQuery query);
+    BankPaymentStatusResult getPaymentStatus(BankPaymentStatusQuery query);
+    BankReconciliationResult reconcile(BankReconciliationCommand command);
+    BankCapabilities getCapabilities();
+}
+```
+
+La arquitectura debe permitir múltiples implementaciones:
+
+```text
+BankPaymentProvider
+ ├── SandboxBankPaymentProvider
+ ├── RestBankPaymentProvider
+ ├── SoapBankPaymentProvider
+ ├── SftpFlatFileBankPaymentProvider
+ ├── Iso20022BankPaymentProvider
+ ├── AchBankPaymentProvider
+ ├── BancolombiaPaymentProvider
+ ├── DaviviendaPaymentProvider
+ ├── BancoBogotaPaymentProvider
+ ├── BbvaPaymentProvider
+ └── CustomBankPaymentProvider
+```
+
+No es obligatorio conectarse a bancos reales en esta primera entrega, pero SÍ debe quedar una arquitectura realista, extensible y preparada para conectores reales.
+
+Cada adaptador debe estar desacoplado y configurado mediante properties, base de datos o configuración por banco.
+
+Debe soportar:
+
+- REST banking API.
+- SOAP banking API.
+- SFTP con archivos planos.
+- ISO 20022.
+- ACH o archivos bancarios locales.
+- Polling de estados.
+- Callbacks/webhooks bancarios.
+- Mapeo de errores bancarios.
+- Capacidades por banco.
+- Configuración por banco.
+- Tiempos de corte.
+- Límites por transacción.
+- Límites por lote.
+- Moneda soportada.
+- Tipos de cuenta soportados.
+- Canales soportados.
+- Reintentos por banco.
+- Timeouts por banco.
+- Circuit breaker por banco.
+- Fallback controlado.
+
+Crea un modelo como:
+
+```java
+BankConnector
+BankConnectorConfig
+BankCapabilities
+BankChannelType
+BankIntegrationType
+BankCredentialReference
+BankEndpointConfig
+BankErrorMapping
+BankCutoffWindow
+BankLimitRule
+```
+
+El sistema debe poder seleccionar dinámicamente el adaptador correcto según:
+
+- Banco.
+- Empresa.
+- Tenant.
+- Tipo de integración.
+- Configuración activa.
+- Capacidades requeridas.
+- Ambiente: sandbox, staging, production.
+
+Debe existir un resolver similar a:
+
+```java
+public interface BankPaymentProviderResolver {
+    BankPaymentProvider resolve(BankProviderResolutionContext context);
+}
+```
+
+---
+
+# 4. Soporte ISO 20022 y mensajería financiera
+
+Implementa una base extensible para soportar ISO 20022.
+
+Debe incluir al menos clases, interfaces, servicios o mappers para:
+
+- `pain.001` — Customer Credit Transfer Initiation.
+- `pain.002` — Payment Status Report.
+- `camt.053` — Bank Statement.
+- `camt.054` — Debit/Credit Notification.
+- `pacs.008` — FI to FI Customer Credit Transfer.
+- `pacs.002` — Payment Status Report.
+
+No necesitas implementar el estándar completo en esta entrega, pero sí crear la estructura correcta:
+
+```text
+iso20022
+ ├── Pain001Builder
+ ├── Pain002Parser
+ ├── Camt053Parser
+ ├── Camt054Parser
+ ├── Pacs008Mapper
+ ├── Pacs002Parser
+ ├── Iso20022PaymentMapper
+ └── Iso20022ValidationService
+```
+
+Debe existir una separación clara entre:
+
+- Modelo interno del sistema.
+- Mensaje bancario externo.
+- Mapper de entrada/salida.
+- Validador.
+- Parser.
+- Serializador XML.
+- Correlation IDs.
+- End-to-end IDs.
+- Payment Information IDs.
+- Instruction IDs.
+
+---
+
+# 5. Estados financieros realistas
+
+Refactoriza el modelo de estados para que sea realista en pagos de nómina.
+
+Debe existir estado de lote y estado de pago individual.
+
+## Estados de lote sugeridos
+
+```text
+DRAFT
+VALIDATING
+VALIDATED
+VALIDATION_FAILED
+PENDING_APPROVAL
+APPROVED
+REJECTED_BY_APPROVER
+SCHEDULED
+SUBMITTING_TO_BANK
+SUBMITTED_TO_BANK
+BANK_RECEIVED
+BANK_VALIDATING
+BANK_ACCEPTED
+BANK_REJECTED
+PARTIALLY_ACCEPTED
+PROCESSING
+PARTIALLY_PAID
+PAID
+PARTIALLY_FAILED
+FAILED
+CANCEL_REQUESTED
+CANCELLED
+EXPIRED
+REVERSED
+RECONCILING
+RECONCILED
+RECONCILIATION_FAILED
+MANUAL_REVIEW_REQUIRED
+```
+
+## Estados de pago individual sugeridos
+
+```text
+CREATED
+VALIDATING
+VALIDATED
+VALIDATION_FAILED
+PENDING_APPROVAL
+APPROVED
+SUBMITTED_TO_BANK
+BANK_RECEIVED
+BANK_ACCEPTED
+BANK_REJECTED
+PROCESSING
+PAID
+FAILED
+RETURNED
+REVERSED
+PENDING_RETRY
+DUPLICATED
+INSUFFICIENT_FUNDS
+INVALID_ACCOUNT
+ACCOUNT_CLOSED
+BENEFICIARY_MISMATCH
+LIMIT_EXCEEDED
+MANUAL_REVIEW_REQUIRED
+RECONCILED
+RECONCILIATION_FAILED
+```
+
+Implementa reglas de transición de estado. No permitas cambios inválidos.
+
+Ejemplo:
+
+- Un lote `DRAFT` puede pasar a `VALIDATING`.
+- Un lote `VALIDATED` puede pasar a `PENDING_APPROVAL`.
+- Un lote `PENDING_APPROVAL` puede pasar a `APPROVED` o `REJECTED_BY_APPROVER`.
+- Un lote `APPROVED` puede pasar a `SUBMITTING_TO_BANK`.
+- Un lote `SUBMITTED_TO_BANK` no debe regresar a `DRAFT`.
+- Un pago `PAID` no debe volver a `PROCESSING` salvo que exista reversión formal.
+
+Crea un servicio o policy como:
+
+```java
+PaymentStateTransitionPolicy
+PayrollBatchStateTransitionPolicy
+```
+
+Cada transición debe auditarse.
+
+---
+
+# 6. Idempotencia robusta
+
+Fortalece la idempotencia para evitar pagos duplicados.
+
+Debe soportar:
+
+- Header `Idempotency-Key`.
+- Scope por tenant.
+- Scope por empresa.
+- Scope por endpoint/operación.
+- Hash del payload.
+- Respuesta almacenada.
+- TTL configurable.
+- Detección de payload diferente con misma key.
+- Estado `IN_PROGRESS`, `COMPLETED`, `FAILED`.
+- Bloqueo transaccional para concurrencia.
+- Respuesta consistente ante reintentos.
+
+Implementa una tabla o entidad similar:
+
+```text
+idempotency_records
+- id
+- tenant_id
+- company_id
+- operation
+- idempotency_key
+- request_hash
+- response_body
+- response_status
+- status
+- locked_until
+- created_at
+- expires_at
+```
+
+Debe cubrir especialmente:
+
+- Creación de lote.
+- Envío de lote al banco.
+- Confirmación bancaria.
+- Webhooks entrantes.
+- Reintentos de procesamiento.
+- Conciliación.
+
+---
+
+# 7. Conciliación bancaria avanzada
+
+Fortalece el módulo de conciliación.
+
+Debe soportar conciliación por:
+
+- Lote.
+- Pago individual.
+- Referencia bancaria.
+- Cuenta origen.
+- Cuenta destino.
+- Monto.
+- Fecha.
+- Estado bancario.
+- Moneda.
+- End-to-end ID.
+- External transaction ID.
+
+Estados de conciliación:
+
+```text
+PENDING
+MATCHED
+PARTIALLY_MATCHED
+MISMATCHED
+MISSING_IN_BANK
+MISSING_IN_SYSTEM
+AMOUNT_MISMATCH
+STATUS_MISMATCH
+DUPLICATED_IN_BANK
+DUPLICATED_IN_SYSTEM
+MANUAL_REVIEW_REQUIRED
+RECONCILED
+FAILED
+```
+
+Debe permitir:
+
+- Cargar extractos bancarios.
+- Parsear CSV/TXT/XML.
+- Preparar soporte para `camt.053` y `camt.054`.
+- Ejecutar matching automático.
+- Generar diferencias.
+- Registrar evidencias.
+- Permitir revisión manual.
+- Exportar reporte de conciliación.
+- Auditar cada resultado.
+
+Crea servicios similares a:
+
+```java
+BankStatementImportService
+BankStatementParser
+ReconciliationMatchingService
+ReconciliationReportService
+ReconciliationEvidenceService
+```
+
+---
+
+# 8. Maker-checker y flujo de aprobaciones empresariales
+
+Implementa o fortalece un flujo de aprobación empresarial tipo maker-checker.
+
+Reglas mínimas:
+
+- Quien crea un lote no debe poder aprobarlo si la empresa exige separación de funciones.
+- Aprobación simple para lotes pequeños.
+- Aprobación doble para lotes superiores a cierto umbral.
+- Aprobación por rol.
+- Aprobación por monto.
+- Aprobación por empresa.
+- Aprobación por tenant.
+- Registro de comentarios.
+- Registro de rechazo.
+- Auditoría de aprobación.
+- Expiración de solicitudes.
+- Bloqueo de envío al banco si no está aprobado.
+
+Modelos sugeridos:
+
+```text
+ApprovalRequest
+ApprovalStep
+ApprovalPolicy
+ApprovalDecision
+ApprovalThreshold
+ApprovalRoleRule
+```
+
+Estados de aprobación:
+
+```text
+PENDING
+APPROVED
+REJECTED
+EXPIRED
+CANCELLED
+ESCALATED
+```
+
+---
+
+# 9. Motor de validación bancaria y empresarial
+
+Antes de enviar cualquier lote al banco, debe existir un motor de validación.
+
+Validaciones mínimas:
+
+- Empresa activa.
+- Tenant activo.
+- Banco habilitado.
+- Conector bancario activo.
+- Cuenta origen válida.
+- Cuenta destino presente.
+- Tipo de cuenta válido.
+- Código de banco destino válido.
+- Moneda válida.
+- Monto mayor que cero.
+- No duplicidad de pagos.
+- Límite por pago.
+- Límite por lote.
+- Límite diario.
+- Fecha de ejecución válida.
+- Día hábil bancario.
+- Hora dentro de ventana de corte.
+- Beneficiario con identificación válida.
+- Cantidad máxima de pagos por lote.
+- Saldo suficiente si el banco lo permite.
+- Configuración de aprobación cumplida.
+- Idempotency-Key presente para operaciones críticas.
+
+Crea un diseño extensible tipo:
+
+```java
+PayrollBatchValidationRule
+PayrollPaymentValidationRule
+BankValidationRule
+ValidationEngine
+ValidationResult
+ValidationError
+ValidationSeverity
+```
+
+---
+
+# 10. Seguridad bancaria production-grade
+
+Fortalece toda la seguridad.
+
+Debe incluir o mejorar:
+
+## Autenticación y autorización
+
+- JWT real.
+- OAuth2 Client Credentials para integraciones B2B.
+- Roles y permisos.
+- Scopes por API client.
+- Tenant isolation.
+- Company isolation.
+- Permisos granulares.
+- Separación entre usuarios humanos y clientes máquina.
+- Rotación de credenciales.
+- Revocación de credenciales.
+
+## JWT
+
+Si actualmente usa secreto simétrico simple, migrar o preparar soporte para:
+
+- RS256 o ES256.
+- JWK Set.
+- Key rotation.
+- `kid`.
+- Validación de issuer.
+- Validación de audience.
+- Expiración corta.
+- Refresh controlado solo para usuarios humanos si aplica.
+
+## mTLS
+
+Fortalecer mTLS:
+
+- Validación de certificado cliente.
+- Validación de CA confiable.
+- Validación CN/SAN.
+- Validación de expiración.
+- Posibilidad de pinning de huella.
+- Asociación certificado ↔ tenant/client.
+- Auditoría de certificados usados.
+
+## IP allowlist
+
+Fortalecer IP allowlist:
+
+- No confiar ciegamente en `X-Forwarded-For`.
+- Permitir configuración de proxies confiables.
+- Soportar CIDR.
+- Scope por tenant/client.
+- Auditar bloqueos.
+
+## Cifrado
+
+- Cifrado de datos sensibles en reposo.
+- AES-GCM como mínimo.
+- No guardar llaves en texto plano.
+- Abstracción para KMS/Vault.
+- Soporte para Azure Key Vault, AWS KMS, GCP KMS o HashiCorp Vault.
+- Rotación de llaves.
+- Versionado de llaves.
+- No loguear datos sensibles.
+- Enmascarar cuentas, documentos e identificadores sensibles.
+
+## Rate limiting
+
+- Rate limit distribuido.
+- Preferible Redis o API Gateway.
+- Rate limit por IP.
+- Rate limit por tenant.
+- Rate limit por API client.
+- Rate limit por endpoint.
+- Respuestas estándar `429`.
+- Métricas de throttling.
+
+## Webhooks
+
+Fortalecer webhooks:
+
+- Firma HMAC.
+- Timestamp.
+- Nonce.
+- Replay protection.
+- Reintentos con backoff exponencial.
+- Dead Letter Queue.
+- Delivery logs.
+- Webhook subscriptions por tenant.
+- Secretos por webhook.
+- Rotación de secretos.
+- Verificación de firma entrante y saliente.
+- Idempotencia en eventos entrantes.
+
+---
+
+# 11. Auditoría completa e inmutable
+
+Fortalece auditoría para que sea defendible ante bancos.
+
+Cada operación crítica debe dejar evidencia:
+
+- Usuario o client que ejecuta.
+- Tenant.
+- Empresa.
+- IP.
+- Certificado usado si aplica.
+- Correlation ID.
+- Request ID.
+- Idempotency-Key.
+- Acción.
+- Entidad afectada.
+- Estado anterior.
+- Estado nuevo.
+- Fecha/hora.
+- Resultado.
+- Motivo de rechazo/fallo.
+- Hash del payload cuando aplique.
+- Referencia bancaria externa.
+- Canal de integración.
+
+Operaciones obligatorias a auditar:
+
+- Login.
+- Emisión de token.
+- Creación de lote.
+- Validación de lote.
+- Cambio de estado.
+- Aprobación.
+- Rechazo.
+- Envío al banco.
+- Respuesta bancaria.
+- Webhook recibido.
+- Webhook enviado.
+- Reintento.
+- Conciliación.
+- Cambio de configuración bancaria.
+- Cambio de permisos.
+- Cambio de API client.
+- Cambio de IP allowlist.
+- Cambio de certificados.
+- Exportación de reportes.
+
+Opcional pero deseable:
+
+- Hash chain de auditoría.
+- Append-only audit log.
+- Exportación de auditoría.
+- Evidencias descargables.
+
+---
+
+# 12. Multi-tenancy empresarial
+
+Fortalece multi-tenancy.
+
+Debe garantizar:
+
+- Aislamiento por tenant.
+- Aislamiento por empresa.
+- Toda query sensible debe filtrar por tenant/company.
+- API clients asociados a tenant.
+- Usuarios asociados a tenant/company.
+- Bancos habilitados por tenant/company.
+- Límites configurables por tenant/company.
+- Aprobaciones configurables por tenant/company.
+- Webhooks configurables por tenant/company.
+- Credenciales bancarias separadas por tenant/company.
+- Auditoría filtrable por tenant/company.
+- Métricas por tenant/company.
+
+Evita vulnerabilidades tipo BOLA/IDOR. Un tenant jamás debe consultar o modificar datos de otro tenant.
+
+---
+
+# 13. Observabilidad production-grade
+
+Implementa observabilidad seria.
+
+Debe incluir:
+
+- Logs estructurados JSON.
+- Correlation ID en cada request.
+- Request ID.
+- Trace ID.
+- Tenant ID en logs internos seguros.
+- Métricas con Micrometer.
+- Preparación para Prometheus.
+- Health checks con Spring Actuator.
+- Readiness/liveness probes.
+- Métricas por banco.
+- Métricas por tenant.
+- Métricas de lotes.
+- Métricas de pagos.
+- Métricas de conciliación.
+- Métricas de webhooks.
+- Métricas de RabbitMQ.
+- Métricas de latencia bancaria.
+- Métricas de errores bancarios.
+- Métricas de reintentos.
+- Trazas distribuidas con OpenTelemetry.
+
+Indicadores mínimos:
+
+```text
+payroll_batches_created_total
+payroll_batches_submitted_total
+payroll_batches_paid_total
+payroll_batches_failed_total
+payroll_payments_total
+payroll_payments_paid_total
+payroll_payments_failed_total
+bank_provider_latency_seconds
+bank_provider_errors_total
+webhook_deliveries_total
+webhook_failures_total
+reconciliation_matches_total
+reconciliation_mismatches_total
+idempotency_replays_total
+approval_requests_total
+approval_rejections_total
+```
+
+---
+
+# 14. Resiliencia operativa
+
+Fortalece resiliencia:
+
+- Timeouts por integración bancaria.
+- Retry controlado.
+- Backoff exponencial.
+- Circuit breaker.
+- Bulkhead.
+- Dead Letter Queue.
+- Reprocesamiento seguro.
+- Reintentos idempotentes.
+- Manejo de errores bancarios normalizados.
+- Estados recuperables.
+- No dejar lotes en estados inconsistentes.
+- Jobs de recuperación.
+- Jobs de conciliación programada.
+- Jobs de expiración de aprobaciones.
+- Jobs de limpieza de idempotency records vencidos.
+- Jobs de reintento de webhooks.
+
+Puedes usar Resilience4j si aplica.
+
+---
+
+# 15. Procesamiento asíncrono
+
+Si existe RabbitMQ, fortalecerlo.
+
+Debe existir separación entre:
+
+- Solicitud HTTP.
+- Validación.
+- Aprobación.
+- Encolado.
+- Procesamiento bancario.
+- Actualización de estados.
+- Webhooks.
+- Conciliación.
+
+Eventos sugeridos:
+
+```text
+PayrollBatchCreatedEvent
+PayrollBatchValidatedEvent
+PayrollBatchApprovalRequestedEvent
+PayrollBatchApprovedEvent
+PayrollBatchRejectedEvent
+PayrollBatchSubmittedToBankEvent
+BankPaymentAcceptedEvent
+BankPaymentRejectedEvent
+PayrollPaymentPaidEvent
+PayrollPaymentFailedEvent
+PayrollBatchPartiallyPaidEvent
+PayrollBatchPaidEvent
+ReconciliationCompletedEvent
+WebhookDeliveryFailedEvent
+```
+
+Los eventos deben ser idempotentes y auditables.
+
+---
+
+# 16. API REST profesional
+
+Fortalece los endpoints REST.
+
+Debe existir una API clara para:
+
+## Empresas / Companies
+
+- Crear empresa.
+- Consultar empresa.
+- Configurar bancos habilitados.
+- Configurar límites.
+- Configurar aprobaciones.
+- Configurar webhooks.
+
+## Payroll batches
+
+- Crear lote.
+- Validar lote.
+- Consultar lote.
+- Listar lotes.
+- Solicitar aprobación.
+- Aprobar lote.
+- Rechazar lote.
+- Enviar lote al banco.
+- Cancelar lote si el estado lo permite.
+- Consultar pagos individuales.
+- Descargar reporte.
+
+## Payments
+
+- Consultar pago individual.
+- Consultar estado bancario.
+- Marcar revisión manual si aplica.
+- Consultar historial.
+
+## Banking
+
+- Listar bancos.
+- Consultar capacidades del banco.
+- Consultar conectores.
+- Probar conectividad.
+- Consultar estado de lote en banco.
+- Consultar estado de pago en banco.
+
+## Reconciliation
+
+- Importar extracto.
+- Ejecutar conciliación.
+- Consultar resultado.
+- Resolver diferencia manualmente.
+- Exportar reporte.
+
+## Webhooks
+
+- Crear suscripción.
+- Rotar secreto.
+- Desactivar webhook.
+- Consultar entregas.
+- Reintentar entrega.
+
+## Audit
+
+- Consultar auditoría por lote.
+- Consultar auditoría por pago.
+- Consultar auditoría por empresa.
+- Exportar auditoría.
+
+Usa DTOs limpios. No expongas entidades JPA directamente.
+
+---
+
+# 17. Manejo de errores estándar
+
+Implementa respuestas de error profesionales.
+
+Formato sugerido:
+
+```json
+{
+  "timestamp": "2026-05-23T00:00:00Z",
+  "status": 400,
+  "error": "VALIDATION_ERROR",
+  "message": "The payroll batch contains invalid payments",
+  "correlationId": "abc-123",
+  "details": [
+    {
+      "field": "payments[3].accountNumber",
+      "code": "INVALID_ACCOUNT_NUMBER",
+      "message": "Invalid destination account number"
+    }
+  ]
+}
+```
+
+Debe haber errores normalizados para:
+
+- Validación.
+- Autenticación.
+- Autorización.
+- Idempotencia.
+- Estado inválido.
+- Banco no disponible.
+- Timeout bancario.
+- Rechazo bancario.
+- Conciliación fallida.
+- Tenant no autorizado.
+- Rate limit.
+- Webhook inválido.
+- Firma inválida.
+- Certificado inválido.
+
+---
+
+# 18. Base de datos y migraciones
+
+Usa Flyway o el mecanismo existente de migración.
+
+Crea migraciones para nuevas tablas y columnas.
+
+Entidades/tablas sugeridas:
+
+```text
+tenants
+companies
+bank_connectors
+bank_connector_configs
+bank_capabilities
+bank_credentials
+payroll_batches
+payroll_payments
+payroll_batch_state_history
+payroll_payment_state_history
+approval_policies
+approval_requests
+approval_steps
+idempotency_records
+audit_logs
+bank_submissions
+bank_submission_attempts
+bank_payment_statuses
+bank_statements
+bank_statement_entries
+reconciliation_runs
+reconciliation_items
+webhook_subscriptions
+webhook_deliveries
+webhook_delivery_attempts
+api_clients
+client_certificates
+ip_allowlist_entries
+rate_limit_policies
+```
+
+No rompas migraciones existentes. Si necesitas modificar, crea nuevas migraciones incrementales.
+
+Incluye índices importantes:
+
+- tenant_id.
+- company_id.
+- batch_id.
+- payment_id.
+- external_reference.
+- bank_reference.
+- idempotency_key.
+- correlation_id.
+- created_at.
+- status.
+- bank_id.
+- connector_id.
+
+Incluye constraints para integridad.
+
+---
+
+# 19. Pruebas obligatorias
+
+Agrega pruebas serias.
+
+## Unit tests
+
+Cubrir:
+
+- Validaciones de lote.
+- Validaciones de pagos.
+- Transiciones de estado.
+- Idempotencia.
+- Approval policies.
+- Mapper bancario.
+- Reconciliation matching.
+- Webhook signing.
+- Bank provider resolver.
+- Error mapping.
+
+## Integration tests
+
+Cubrir:
+
+- PostgreSQL con Testcontainers.
+- RabbitMQ con Testcontainers si aplica.
+- Flyway migrations.
+- Repositories.
+- Servicios críticos.
+- Idempotencia concurrente.
+- Procesamiento asíncrono.
+
+## Contract tests
+
+Cubrir:
+
+- Adaptadores bancarios mock.
+- REST bank provider.
+- Webhooks salientes.
+- Webhooks entrantes.
+- Errores bancarios.
+
+## E2E tests
+
+Escenarios mínimos:
+
+1. Crear empresa.
+2. Configurar banco.
+3. Crear lote de nómina.
+4. Validar lote.
+5. Solicitar aprobación.
+6. Aprobar lote.
+7. Enviar al banco sandbox.
+8. Recibir estado bancario.
+9. Marcar pagos como pagados/fallidos.
+10. Ejecutar conciliación.
+11. Consultar auditoría.
+
+Escenario adicional:
+
+- Repetir envío con la misma `Idempotency-Key` y validar que no se duplique el pago.
+
+Escenario adicional:
+
+- Banco caído, reintentos, circuit breaker y estado consistente.
+
+---
+
+# 20. CI/CD profesional
+
+Revisa y corrige el pipeline actual.
+
+Si el proyecto usa Java 21, el pipeline debe usar Java 21. Evita inconsistencias como usar JDK 25 si el `pom.xml` define Java 21.
+
+Pipeline esperado:
+
+```text
+Pull Request:
+- Checkout
+- Setup JDK 21
+- Cache Maven
+- Compile
+- Unit tests
+- Integration tests
+- Coverage
+- Static analysis
+- Dependency scan
+- Secret scan
+- Build Docker image
+- Container scan
+- Publish test reports
+
+Main/develop:
+- Build
+- Test
+- Package
+- Generate SBOM
+- Build Docker image
+- Push image
+- Deploy staging
+- Smoke tests
+```
+
+Herramientas sugeridas:
+
+- Maven.
+- JUnit 5.
+- Mockito.
+- Testcontainers.
+- Jacoco.
+- Spring Boot Test.
+- OWASP Dependency Check.
+- Gitleaks.
+- Trivy.
+- Syft para SBOM.
+- GitHub Actions.
+
+Agrega gates mínimos:
+
+- Tests deben pasar.
+- Cobertura mínima razonable.
+- No secretos en repositorio.
+- No vulnerabilidades críticas sin justificar.
+- Build reproducible.
+
+---
+
+# 21. Documentación obligatoria
+
+Agrega o actualiza documentación.
+
+Archivos sugeridos:
+
+```text
+README.md
+docs/ARCHITECTURE.md
+docs/BANKING_INTEGRATION.md
+docs/MULTI_BANK_ADAPTERS.md
+docs/SECURITY.md
+docs/IDEMPOTENCY.md
+docs/WEBHOOKS.md
+docs/RECONCILIATION.md
+docs/APPROVALS.md
+docs/AUDIT.md
+docs/OBSERVABILITY.md
+docs/API_ONBOARDING.md
+docs/OPERATIONS_RUNBOOK.md
+docs/COMPLIANCE_READINESS.md
+docs/ROADMAP.md
+```
+
+La documentación debe explicar:
+
+- Qué problema resuelve.
+- Arquitectura general.
+- Flujo de pagos.
+- Flujo de aprobación.
+- Flujo de integración bancaria.
+- Cómo crear un nuevo adaptador bancario.
+- Cómo configurar un banco.
+- Cómo funciona idempotencia.
+- Cómo funciona conciliación.
+- Cómo funcionan webhooks.
+- Cómo se audita.
+- Cómo se despliega.
+- Cómo se monitorea.
+- Cómo se prueba.
+- Qué está listo para producción y qué queda como TODO controlado.
+
+---
+
+# 22. Developer experience
+
+Mejora la experiencia para otros desarrolladores.
+
+Debe existir:
+
+- `.env.example`.
+- `docker-compose.yml` seguro para local.
+- Perfiles `local`, `test`, `staging`, `prod`.
+- Datos de prueba.
+- Colección Postman o Bruno.
+- Swagger/OpenAPI completo.
+- Comandos claros en README.
+- Ejemplos de payloads.
+- Ejemplos de webhooks.
+- Ejemplos de errores.
+- Ejemplos de flujo completo.
+
+---
+
+# 23. Portal futuro / capa frontend
+
+Aunque este proyecto sea backend, deja preparado el backend para un portal operativo.
+
+Debe soportar casos de uso para:
+
+## Portal de empresa
+
+- Cargar lote.
+- Validar lote.
+- Aprobar lote.
+- Ver estado.
+- Ver errores.
+- Descargar reportes.
+- Consultar auditoría.
+- Gestionar API keys.
+- Gestionar webhooks.
+
+## Portal banco/admin
+
+- Ver empresas conectadas.
+- Ver lotes por banco.
+- Monitorear conectores.
+- Consultar errores.
+- Ver métricas.
+- Revisar conciliaciones.
+- Gestionar configuración bancaria.
+
+No implementes frontend, pero diseña APIs y DTOs pensando en estas pantallas.
+
+---
+
+# 24. Capa de inteligencia y riesgo operativo
+
+Deja preparada una capa para scoring de riesgo o reglas inteligentes.
+
+No es obligatorio implementar ML real ahora, pero sí dejar interfaces para:
+
+- Detección de anomalías en lotes.
+- Monto inusual.
+- Cuenta nueva.
+- Beneficiario nuevo.
+- Empresa con histórico anómalo.
+- Banco con alto fallo.
+- Riesgo por lote.
+- Recomendación de revisión manual.
+- Alertas operativas.
+
+Modelo sugerido:
+
+```java
+PayrollRiskAssessmentService
+RiskRule
+RiskScore
+RiskFactor
+RiskRecommendation
+```
+
+Estados o decisiones:
+
+```text
+LOW_RISK
+MEDIUM_RISK
+HIGH_RISK
+MANUAL_REVIEW_REQUIRED
+BLOCKED
+```
+
+---
+
+# 25. Entregables esperados
+
+Al finalizar, entrega:
+
+1. Resumen ejecutivo de los cambios.
+2. Resumen técnico de arquitectura.
+3. Lista de archivos creados/modificados.
+4. Nuevos endpoints.
+5. Nuevas entidades/tablas.
+6. Nuevas migraciones.
+7. Nuevos tests.
+8. Cómo ejecutar localmente.
+9. Cómo correr pruebas.
+10. Cómo probar flujo completo.
+11. Cómo crear un nuevo adaptador bancario.
+12. Riesgos técnicos pendientes.
+13. TODOs explícitos si algo queda preparado pero no implementado.
+14. Conventional commit recomendado.
+
+---
+
+# 26. Criterios de aceptación
+
+El trabajo se considera correcto si:
+
+- El proyecto compila.
+- Los tests pasan.
+- La arquitectura multi-adaptador bancaria existe y es extensible.
+- Hay al menos un adaptador sandbox funcional.
+- Hay al menos una base para REST bank provider.
+- Hay estructura para SFTP/ISO 20022 aunque sea parcial.
+- El sistema soporta estados realistas.
+- No se puede enviar un lote sin validación y aprobación cuando la política lo exige.
+- La idempotencia evita duplicados.
+- La auditoría registra operaciones críticas.
+- La conciliación tiene modelo más avanzado que comparar solo montos.
+- Los webhooks están firmados y tienen reintentos.
+- La seguridad está mejor organizada.
+- La documentación explica cómo vender e integrar técnicamente la solución.
+- No se exponen secretos.
+- No se rompen funcionalidades existentes sin justificación.
+- El código sigue buenas prácticas de Spring Boot y arquitectura limpia.
+
+---
+
+# 27. Orden recomendado de implementación
+
+Implementa en este orden:
+
+## Fase 1 — Auditoría y refactor base
+
+- Analiza estructura actual.
+- Detecta módulos existentes.
+- Identifica duplicidades.
+- Corrige inconsistencias de Java/Maven/pipeline.
+- Define paquetes limpios.
+- Asegura que el proyecto compile.
+
+## Fase 2 — Dominio financiero
+
+- Estados de lote.
+- Estados de pago.
+- Historial de estados.
+- Reglas de transición.
+- Validaciones.
+- Auditoría de cambios.
+
+## Fase 3 — Capa bancaria multi-adaptador
+
+- Puerto `BankPaymentProvider`.
+- Resolver de proveedor.
+- Configuración de conectores.
+- Sandbox provider.
+- REST provider base.
+- SFTP provider base.
+- ISO 20022 package base.
+- Error mapping bancario.
+- Capabilities por banco.
+
+## Fase 4 — Seguridad e idempotencia
+
+- OAuth2 client credentials.
+- JWT robusto.
+- Roles/permisos/scopes.
+- Idempotency records.
+- mTLS mejorado.
+- IP allowlist robusto.
+- Rate limiting distribuible.
+- Cifrado/KMS abstraction.
+
+## Fase 5 — Aprobaciones y conciliación
+
+- Maker-checker.
+- Approval policies.
+- Reconciliation runs.
+- Bank statement import.
+- Matching automático.
+- Reportes de diferencias.
+
+## Fase 6 — Webhooks y asincronía
+
+- Eventos de dominio.
+- RabbitMQ si aplica.
+- Webhook delivery logs.
+- Retry/backoff.
+- DLQ.
+- Replay protection.
+
+## Fase 7 — Observabilidad
+
+- Logs estructurados.
+- Correlation IDs.
+- Métricas.
+- Actuator.
+- OpenTelemetry base.
+- Dashboards documentados.
+
+## Fase 8 — Tests y documentación
+
+- Unit tests.
+- Integration tests.
+- E2E tests.
+- Contract tests.
+- README.
+- Docs técnicas.
+- Postman/OpenAPI.
+
+---
+
+# 28. Restricciones importantes
+
+- No inventes conexiones reales con bancos si no hay credenciales.
+- No hardcodees secretos.
+- No uses claves por defecto en producción.
+- No elimines seguridad existente.
+- No expongas datos sensibles en logs.
+- No expongas entidades JPA directamente en controllers.
+- No mezcles lógica bancaria en controllers.
+- No acoples los adaptadores al dominio.
+- No hagas cambios masivos sin mantener compilación.
+- No dejes código muerto.
+- No dejes TODOs vagos.
+- Todo TODO debe tener explicación técnica y prioridad.
+- No implementes frontend.
+- No hagas cambios cosméticos irrelevantes.
+- Prioriza producto bancario real sobre cantidad de endpoints.
+
+---
+
+# 29. Resultado esperado del producto
+
+Al terminar, el backend debe poder presentarse así:
+
+“Payroll Payment Orchestrator es una plataforma middleware financiera B2B que permite a empresas conectarse con uno o múltiples bancos para gestionar pagos de nómina de forma segura, auditable, idempotente y automatizada. La solución incluye validación previa, flujo de aprobaciones, procesamiento asíncrono, integración bancaria multi-adaptador, trazabilidad completa, webhooks seguros, conciliación bancaria y capacidades de observabilidad para operación empresarial y bancaria.”
+
+---
+
+# 30. Conventional commit esperado
+
+Usa un commit similar a:
+
+```text
+feat(banking): fortalecer orquestador de nómina como middleware financiero multi-banco
+
+Se transforma el backend Payroll Payment Orchestrator en una plataforma middleware financiera B2B más robusta, segura y preparada para integración bancaria empresarial.
+
+Cambios principales:
+- Se implementa una arquitectura bancaria multi-adaptador basada en puertos y adaptadores.
+- Se agregan bases para conectores REST, SFTP, sandbox e ISO 20022.
+- Se fortalecen los estados financieros de lotes y pagos individuales.
+- Se incorporan reglas de transición de estado y auditoría de cambios.
+- Se mejora la idempotencia para operaciones críticas.
+- Se fortalece el modelo de conciliación bancaria.
+- Se agrega soporte para aprobaciones empresariales tipo maker-checker.
+- Se refuerzan validaciones previas al envío de nómina.
+- Se mejora la seguridad para escenarios B2B bancarios.
+- Se preparan capacidades de observabilidad, métricas y trazabilidad.
+- Se amplía la documentación técnica para integración, operación y escalabilidad.
+- Se agregan pruebas para dominio, idempotencia, validaciones, adaptadores y conciliación.
+```
+
+---
+
+# 31. Instrucción final para la IA
+
+Empieza analizando el repositorio completo y luego implementa la solución por fases, asegurando que el proyecto compile y que cada cambio tenga sentido arquitectónico, financiero y operativo.
+
+No empieces por agregar endpoints de forma desordenada. Primero estabiliza arquitectura, dominio, estados, capa bancaria multi-adaptador, idempotencia, auditoría y seguridad. Luego avanza con conciliación, aprobaciones, observabilidad, pruebas, CI/CD y documentación.
