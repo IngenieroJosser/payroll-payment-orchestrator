@@ -24,6 +24,7 @@ class PostgresContainerSmokeTest {
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
         registry.add("spring.rabbitmq.host", () -> "localhost");
+        registry.add("spring.rabbitmq.listener.simple.auto-startup", () -> "false");
         registry.add("app.security.require-idempotency-key", () -> "false");
     }
 
