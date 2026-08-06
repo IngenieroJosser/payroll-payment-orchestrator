@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 25
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Temurin 21
         uses: actions/setup-java@v4
@@ -57,7 +57,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Build non-root image
         run: docker build --pull --tag payroll-payment-orchestrator:${{ github.sha }} .
