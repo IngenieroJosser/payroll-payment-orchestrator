@@ -19,7 +19,7 @@ public class ReconciliationController {
     @PostMapping
     @PreAuthorize("hasAuthority('reconciliation:manage')")
     public ApiResponse<ReconciliationResponse> reconcile(@PathVariable UUID batchId, @Valid @RequestBody CreateReconciliationRequest request) {
-        return ApiResponse.ok(toResponse(service.reconcile(batchId, request.bankReference(), request.bankAmount())));
+        return ApiResponse.ok(toResponse(service.reconcile(batchId, request.bankReference(), request.bankAmount(), request.sourceEventId(), request.details())));
     }
 
     @GetMapping
@@ -29,6 +29,6 @@ public class ReconciliationController {
     }
 
     private ReconciliationResponse toResponse(ReconciliationItemEntity entity) {
-        return new ReconciliationResponse(entity.getId(), entity.getBatchId(), entity.getBankReference(), entity.getExpectedAmount(), entity.getBankAmount(), entity.getStatus(), entity.getCreatedAt());
+        return new ReconciliationResponse(entity.getId(), entity.getBatchId(), entity.getBankReference(), entity.getCurrency(), entity.getExpectedAmount(), entity.getBankAmount(), entity.getDifferenceAmount(), entity.getStatus(), entity.getCreatedAt());
     }
 }

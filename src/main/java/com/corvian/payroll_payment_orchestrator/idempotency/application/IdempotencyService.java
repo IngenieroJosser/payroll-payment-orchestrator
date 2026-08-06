@@ -122,10 +122,12 @@ public class IdempotencyService {
      */
     @Transactional(readOnly = true)
     public Optional<String> getStoredResponse(String key, String endpoint) {
-        return repository.findByIdempotencyKeyAndEndpoint(key, endpoint)
-            .filter(entity -> !entity.isLocked())
-            .map(IdempotencyKeyEntity::getResponseBody)
-            .filter(response -> response != null && !response.isEmpty());
+        Optional<IdempotencyKeyEntity> existing = repository.findByIdempotencyKeyAndEndpoint(key, endpoint);
+        if (existing.isEmpty() || existing.get().isLocked()) {
+            return Optional.empty();
+        }
+        String responseBody = existing.get().getResponseBody();
+        return responseBody == null || responseBody.isEmpty() ? Optional.empty() : Optional.of(responseBody);
     }
 
     /**
@@ -168,9 +170,8 @@ public class IdempotencyService {
      */
     @Transactional(readOnly = true)
     public boolean isLocked(String key, String endpoint) {
-        return repository.findByIdempotencyKeyAndEndpoint(key, endpoint)
-            .map(IdempotencyKeyEntity::isLocked)
-            .orElse(false);
+        Optional<IdempotencyKeyEntity> existing = repository.findByIdempotencyKeyAndEndpoint(key, endpoint);
+        return existing.isPresent() && existing.get().isLocked();
     }
 
     /**

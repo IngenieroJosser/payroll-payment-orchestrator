@@ -1,10 +1,13 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/payroll-payment-orchestrator
-    username: payroll_user
-    password: payroll_password
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/payroll-payment-orchestrator}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
-
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 10000
   jpa:
     hibernate:
       ddl-auto: validate
@@ -14,20 +17,63 @@ spring:
         format_sql: true
         jdbc:
           time_zone: UTC
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
     show-sql: false
-
   flyway:
     enabled: true
     locations: classpath:db/migration
-    baseline-on-migrate: true
-
+    baseline-on-migrate: false
   rabbitmq:
-    host: localhost
-    port: 5672
-    username: payroll_user
-    password: payroll_password
+    host: ${SPRING_RABBITMQ_HOST:localhost}
+    port: ${SPRING_RABBITMQ_PORT:5672}
+    username: ${SPRING_RABBITMQ_USERNAME}
+    password: ${SPRING_RABBITMQ_PASSWORD}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    listener:
+      simple:
+        acknowledge-mode: auto
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          max-attempts: 5
+          initial-interval: 1000ms
+          multiplier: 2
+          max-interval: 15000ms
+
+app:
+  deployment:
+    payment-execution-enabled: ${APP_PAYMENT_EXECUTION_ENABLED:false}
+  security:
+    jwt-secret: ${APP_JWT_SECRET}
+  crypto:
+    encryption-key: ${APP_ENCRYPTION_KEY}
+    hash-key: ${APP_HASH_KEY}
+  bootstrap:
+    enabled: ${APP_BOOTSTRAP_ENABLED:false}
+    admin:
+      email: ${APP_BOOTSTRAP_ADMIN_EMAIL:}
+      password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:}
+  bank:
+    sandbox-fallback-enabled: ${APP_BANK_SANDBOX_FALLBACK_ENABLED:true}
+    governance:
+      allow-uncertified-providers: ${APP_BANK_ALLOW_UNCERTIFIED_PROVIDERS:false}
+      certified-providers: ${APP_BANK_CERTIFIED_PROVIDERS:}
+  outbound:
+    allow-http: ${APP_OUTBOUND_ALLOW_HTTP:true}
+    allow-private-networks: ${APP_OUTBOUND_ALLOW_PRIVATE_NETWORKS:true}
 
 logging:
   level:
     root: INFO
     com.corvian.payroll_payment_orchestrator: DEBUG
+  pattern:
+    level: "%5p [correlationId=%X{correlationId:-}]"
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true

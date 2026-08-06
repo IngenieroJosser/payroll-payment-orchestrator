@@ -4,13 +4,10 @@ import com.corvian.payroll_payment_orchestrator.payroll.domain.enums.PayrollBatc
 import com.corvian.payroll_payment_orchestrator.payroll.domain.exception.InvalidStateTransitionException;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public record PayrollBatch(
         UUID id,
@@ -25,70 +22,82 @@ public record PayrollBatch(
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
 ) {
-    // Definimos el mapa de transiciones válidas para evitar estados ilícitos
-    private static final Map<PayrollBatchStatus, EnumSet<PayrollBatchStatus>> VALID_TRANSITIONS = Map.of(
-        PayrollBatchStatus.DRAFT, EnumSet.of(PayrollBatchStatus.VALIDATING, PayrollBatchStatus.CANCELLED, PayrollBatchStatus.PENDING_APPROVAL),
-        PayrollBatchStatus.VALIDATING, EnumSet.of(PayrollBatchStatus.VALIDATED, PayrollBatchStatus.FAILED),
-        PayrollBatchStatus.VALIDATED, EnumSet.of(PayrollBatchStatus.PENDING_APPROVAL, PayrollBatchStatus.CANCELLED),
-        PayrollBatchStatus.PENDING_APPROVAL, EnumSet.of(PayrollBatchStatus.APPROVED, PayrollBatchStatus.REJECTED, PayrollBatchStatus.CANCELLED),
-        PayrollBatchStatus.APPROVED, EnumSet.of(PayrollBatchStatus.SCHEDULED, PayrollBatchStatus.PROCESSING, PayrollBatchStatus.CANCELLED),
-        PayrollBatchStatus.SCHEDULED, EnumSet.of(PayrollBatchStatus.PROCESSING, PayrollBatchStatus.CANCELLED),
-        PayrollBatchStatus.PROCESSING, EnumSet.of(PayrollBatchStatus.SENT_TO_BANK, PayrollBatchStatus.PARTIALLY_PAID, PayrollBatchStatus.PAID, PayrollBatchStatus.FAILED),
-        PayrollBatchStatus.SENT_TO_BANK, EnumSet.of(PayrollBatchStatus.PAID, PayrollBatchStatus.PARTIALLY_PAID, PayrollBatchStatus.FAILED)
+    private static final Map<PayrollBatchStatus, EnumSet<PayrollBatchStatus>> VALID_TRANSITIONS = Map.ofEntries(
+            Map.entry(PayrollBatchStatus.DRAFT, EnumSet.of(PayrollBatchStatus.VALIDATING, PayrollBatchStatus.CANCELLED)),
+            Map.entry(PayrollBatchStatus.VALIDATING, EnumSet.of(PayrollBatchStatus.VALIDATED, PayrollBatchStatus.FAILED)),
+            Map.entry(PayrollBatchStatus.VALIDATED, EnumSet.of(PayrollBatchStatus.PENDING_APPROVAL, PayrollBatchStatus.CANCELLED)),
+            Map.entry(PayrollBatchStatus.PENDING_APPROVAL, EnumSet.of(PayrollBatchStatus.APPROVED, PayrollBatchStatus.REJECTED, PayrollBatchStatus.CANCELLED)),
+            Map.entry(PayrollBatchStatus.APPROVED, EnumSet.of(PayrollBatchStatus.SCHEDULED, PayrollBatchStatus.PROCESSING, PayrollBatchStatus.CANCELLED)),
+            Map.entry(PayrollBatchStatus.SCHEDULED, EnumSet.of(PayrollBatchStatus.PROCESSING, PayrollBatchStatus.CANCELLED)),
+            Map.entry(PayrollBatchStatus.PROCESSING, EnumSet.of(PayrollBatchStatus.SENT_TO_BANK, PayrollBatchStatus.PARTIALLY_PAID, PayrollBatchStatus.PAID, PayrollBatchStatus.FAILED)),
+            Map.entry(PayrollBatchStatus.SENT_TO_BANK, EnumSet.of(PayrollBatchStatus.PARTIALLY_PAID, PayrollBatchStatus.PAID, PayrollBatchStatus.FAILED)),
+            Map.entry(PayrollBatchStatus.PARTIALLY_PAID, EnumSet.of(PayrollBatchStatus.PAID, PayrollBatchStatus.FAILED))
     );
 
     public PayrollBatch {
-        if (totalAmount == null || totalAmount.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("El monto total del lote de nómina debe ser positivo.");
+        Objects.requireNonNull(id, "Payroll batch id is required");
+        Objects.requireNonNull(companyId, "Company id is required");
+        Objects.requireNonNull(sourceAccountId, "Source account id is required");
+        currency = normalizeCurrency(currency);
+        Objects.requireNonNull(scheduledDate, "Scheduled date is required");
+        status = status == null ? PayrollBatchStatus.DRAFT : status;
+        payments = payments == null ? List.of() : List.copyOf(payments);
+        if (payments.isEmpty()) throw new IllegalArgumentException("Payroll batch must contain at least one payment");
+        if (totalPayments == null || totalPayments != payments.size()) {
+            throw new IllegalArgumentException("Payroll batch payment count is inconsistent");
         }
-        if (totalPayments == null || totalPayments < 0) {
-            throw new IllegalArgumentException("El lote debe contener al menos un pago de nómina.");
+        BigDecimal calculated = calculateTotal(payments).setScale(2);
+        if (totalAmount == null || totalAmount.setScale(2, RoundingMode.UNNECESSARY).compareTo(calculated) != 0) {
+            throw new IllegalArgumentException("Payroll batch total amount is inconsistent with its payments");
         }
-        status = status != null ? status : PayrollBatchStatus.DRAFT;
-        payments = payments != null ? List.copyOf(payments) : Collections.emptyList();
+        totalAmount = calculated;
+        Objects.requireNonNull(createdAt, "Created timestamp is required");
+        Objects.requireNonNull(updatedAt, "Updated timestamp is required");
     }
 
     public PayrollBatch transitionTo(PayrollBatchStatus targetStatus) {
-        if (this.status == targetStatus) {
-            return this;
-        }
-        
-        EnumSet<PayrollBatchStatus> allowed = VALID_TRANSITIONS.get(this.status);
-        if (allowed == null || !allowed.contains(targetStatus)) {
-            throw new InvalidStateTransitionException(
-                "Transición de estado inválida: No se puede cambiar un lote de nómina de " + this.status + " a " + targetStatus
-            );
-        }
+        return transitionTo(targetStatus, OffsetDateTime.now());
+    }
 
-        return new PayrollBatch(
-            this.id,
-            this.companyId,
-            this.sourceAccountId,
-            this.currency,
-            this.scheduledDate,
-            targetStatus,
-            this.totalAmount,
-            this.totalPayments,
-            this.payments,
-            this.createdAt,
-            OffsetDateTime.now()
-        );
+    public PayrollBatch transitionTo(PayrollBatchStatus targetStatus, OffsetDateTime changedAt) {
+        Objects.requireNonNull(targetStatus, "Target status is required");
+        if (status == targetStatus) return this;
+        EnumSet<PayrollBatchStatus> allowed = VALID_TRANSITIONS.get(status);
+        if (allowed == null || !allowed.contains(targetStatus)) {
+            throw new InvalidStateTransitionException("Invalid payroll batch transition from " + status + " to " + targetStatus);
+        }
+        return new PayrollBatch(id, companyId, sourceAccountId, currency, scheduledDate, targetStatus,
+                totalAmount, totalPayments, payments, createdAt, changedAt);
     }
 
     public PayrollBatch copyWithPayments(List<PayrollPayment> newPayments) {
-        return new PayrollBatch(
-            this.id,
-            this.companyId,
-            this.sourceAccountId,
-            this.currency,
-            this.scheduledDate,
-            this.status,
-            this.totalAmount,
-            this.totalPayments,
-            newPayments,
-            this.createdAt,
-            OffsetDateTime.now()
-        );
+        return copyWithPayments(newPayments, OffsetDateTime.now());
+    }
+
+    public PayrollBatch copyWithPayments(List<PayrollPayment> newPayments, OffsetDateTime changedAt) {
+        BigDecimal newTotal = calculateTotal(newPayments);
+        return new PayrollBatch(id, companyId, sourceAccountId, currency, scheduledDate, status,
+                newTotal, newPayments.size(), newPayments, createdAt, changedAt);
+    }
+
+    public boolean isTerminal() {
+        return EnumSet.of(PayrollBatchStatus.PAID, PayrollBatchStatus.FAILED, PayrollBatchStatus.CANCELLED, PayrollBatchStatus.REJECTED)
+                .contains(status);
+    }
+
+    private static BigDecimal calculateTotal(List<PayrollPayment> paymentList) {
+        Objects.requireNonNull(paymentList, "Payment list is required");
+        BigDecimal total = BigDecimal.ZERO;
+        for (PayrollPayment payment : paymentList) {
+            total = total.add(Objects.requireNonNull(payment, "Payment is required").amount());
+        }
+        return total;
+    }
+
+    private static String normalizeCurrency(String value) {
+        if (value == null || !value.trim().matches("^[A-Za-z]{3}$")) {
+            throw new IllegalArgumentException("Currency must be a three-letter ISO-4217 code");
+        }
+        return value.trim().toUpperCase(Locale.ROOT);
     }
 }
-

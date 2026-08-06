@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payroll-orchestrator-config
+data:
+  SPRING_PROFILES_ACTIVE: prod
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres.example.internal:5432/payroll_orchestrator?sslmode=require
+  SPRING_DATASOURCE_USERNAME: payroll_runtime
+  SPRING_RABBITMQ_HOST: rabbitmq.example.internal
+  SPRING_RABBITMQ_PORT: "5671"
+  SPRING_RABBITMQ_USERNAME: payroll_runtime
+  APP_JWT_ISSUER: payroll-payment-orchestrator
+  APP_JWT_AUDIENCE: payroll-api
+  APP_BOOTSTRAP_ENABLED: "false"
+  APP_PAYMENT_EXECUTION_ENABLED: "false"
+  APP_BANK_SANDBOX_FALLBACK_ENABLED: "false"
+  APP_BANK_ALLOW_UNCERTIFIED_PROVIDERS: "false"
+  APP_BANK_CERTIFIED_PROVIDERS: ""
+  APP_IP_ALLOWLIST_ENABLED: "true"
+  APP_IP_ALLOWLIST: "10.0.0.0/8"
+  APP_TRUSTED_PROXY_ADDRESSES: "10.0.0.0/8"
+  APP_MTLS_ENABLED: "true"
+  APP_MTLS_ALLOWED_SUBJECTS: "CN=approved-client.example"
+  APP_OUTBOUND_ALLOWED_HOSTS: "approved-bank-api.example,approved-webhook.example"
+  MANAGEMENT_OTLP_TRACING_ENDPOINT: https://otel-collector.example/v1/traces
+  MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "0.10"

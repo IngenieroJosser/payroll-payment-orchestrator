@@ -2,23 +2,11 @@ package com.corvian.payroll_payment_orchestrator.companies.infrastructure;
 
 import com.corvian.payroll_payment_orchestrator.payroll.domain.enums.AccountType;
 import com.corvian.payroll_payment_orchestrator.shared.crypto.EncryptedStringConverter;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
-import jakarta.persistence.Convert;
-import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.persistence.*;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-@Getter
-@Setter
-@NoArgsConstructor
 @Entity
 @Table(name = "bank_accounts")
 public class BankAccountEntity {
@@ -54,4 +42,25 @@ public class BankAccountEntity {
 
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
+
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+    public UUID getCompanyId() { return companyId; }
+    public void setCompanyId(UUID companyId) { this.companyId = companyId; }
+    public String getBankCode() { return bankCode; }
+    public void setBankCode(String bankCode) { this.bankCode = bankCode; }
+    public AccountType getAccountType() { return accountType; }
+    public void setAccountType(AccountType accountType) { this.accountType = accountType; }
+    public String getAccountNumber() { return accountNumber; }
+    public void setAccountNumber(String accountNumber) { this.accountNumber = accountNumber; }
+    public String getAccountNumberHash() { return accountNumberHash; }
+    public void setAccountNumberHash(String accountNumberHash) { this.accountNumberHash = accountNumberHash; }
+    public String getAccountNumberMasked() { return accountNumberMasked; }
+    public void setAccountNumberMasked(String accountNumberMasked) { this.accountNumberMasked = accountNumberMasked; }
+    public String getAccountNumberLast4() { return accountNumberLast4; }
+    public void setAccountNumberLast4(String accountNumberLast4) { this.accountNumberLast4 = accountNumberLast4; }
+    public BankAccountStatus getStatus() { return status; }
+    public void setStatus(BankAccountStatus status) { this.status = status; }
+    public OffsetDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(OffsetDateTime createdAt) { this.createdAt = createdAt; }
 }

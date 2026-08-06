@@ -7,6 +7,7 @@ import com.corvian.payroll_payment_orchestrator.shared.response.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,22 +28,26 @@ public class CompanyController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('company:manage')")
     public ResponseEntity<ApiResponse<CompanyResponse>> create(@Valid @RequestBody CreateCompanyRequest request) {
         CompanyEntity created = service.create(request.tenantId(), request.legalName(), request.taxId(), request.currency());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(toCompanyResponse(created)));
     }
 
     @GetMapping
+    @PreAuthorize("hasAuthority('company:manage') or hasAuthority('payroll:read')")
     public ApiResponse<List<CompanyResponse>> list() {
         return ApiResponse.ok(service.findAll().stream().map(this::toCompanyResponse).toList());
     }
 
     @GetMapping("/{companyId}")
+    @PreAuthorize("hasAuthority('company:manage') or hasAuthority('payroll:read')")
     public ApiResponse<CompanyResponse> findById(@PathVariable UUID companyId) {
         return ApiResponse.ok(toCompanyResponse(service.findById(companyId)));
     }
 
     @PostMapping("/{companyId}/bank-accounts")
+    @PreAuthorize("hasAuthority('company:manage')")
     public ResponseEntity<ApiResponse<BankAccountResponse>> addBankAccount(
             @PathVariable UUID companyId,
             @Valid @RequestBody CreateBankAccountRequest request
@@ -52,6 +57,7 @@ public class CompanyController {
     }
 
     @GetMapping("/{companyId}/bank-accounts")
+    @PreAuthorize("hasAuthority('company:manage') or hasAuthority('payroll:read')")
     public ApiResponse<List<BankAccountResponse>> listBankAccounts(@PathVariable UUID companyId) {
         return ApiResponse.ok(service.findBankAccounts(companyId).stream().map(this::toBankAccountResponse).toList());
     }

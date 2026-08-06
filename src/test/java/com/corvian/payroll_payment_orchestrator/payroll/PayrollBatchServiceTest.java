@@ -8,6 +8,9 @@ import com.corvian.payroll_payment_orchestrator.payroll.application.port.in.Appr
 import com.corvian.payroll_payment_orchestrator.payroll.application.port.in.CreatePayrollBatchUseCase;
 import com.corvian.payroll_payment_orchestrator.payroll.application.port.in.ExecutePayrollBatchUseCase;
 import com.corvian.payroll_payment_orchestrator.payroll.application.usecase.PayrollBatchService;
+import java.time.Clock;
+import com.corvian.payroll_payment_orchestrator.shared.security.context.ResourceAccessService;
+import com.corvian.payroll_payment_orchestrator.payroll.application.usecase.PayrollBatchStatusHistoryService;
 import com.corvian.payroll_payment_orchestrator.payroll.domain.enums.AccountType;
 import com.corvian.payroll_payment_orchestrator.payroll.domain.enums.PayrollBatchStatus;
 import com.corvian.payroll_payment_orchestrator.payroll.domain.enums.PayrollPaymentStatus;
@@ -43,7 +46,10 @@ class PayrollBatchServiceTest {
                 webhook,
                 createUseCase,
                 approveUseCase,
-                executeUseCase
+                executeUseCase,
+                mock(ResourceAccessService.class),
+                mock(PayrollBatchStatusHistoryService.class),
+                Clock.systemUTC()
         );
 
         // Mock del createUseCase para devolver un PayrollBatch válido
@@ -64,9 +70,10 @@ class PayrollBatchServiceTest {
                     ))
                     .toList();
 
-            BigDecimal totalAmount = payments.stream()
-                    .map(PayrollPayment::amount)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal totalAmount = BigDecimal.ZERO;
+            for (PayrollPayment payment : payments) {
+                totalAmount = totalAmount.add(payment.amount());
+            }
 
             return new PayrollBatch(
                     UUID.randomUUID(),

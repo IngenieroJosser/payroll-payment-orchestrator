@@ -14,9 +14,19 @@ import java.nio.charset.StandardCharsets;
 @Component
 public class IpAllowlistFilter extends OncePerRequestFilter {
     private final SecurityProperties properties;
+    private final ClientIpResolver clientIpResolver;
 
-    public IpAllowlistFilter(SecurityProperties properties) {
+    public IpAllowlistFilter(SecurityProperties properties, ClientIpResolver clientIpResolver) {
         this.properties = properties;
+        this.clientIpResolver = clientIpResolver;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.equals("/actuator/health")
+                || path.startsWith("/actuator/health/")
+                || path.equals("/api/v1/health");
     }
 
     @Override
@@ -26,33 +36,14 @@ public class IpAllowlistFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        String ip = clientIp(request);
-        if (!properties.getIpAllowlist().contains(ip)) {
+        String ip = clientIpResolver.resolve(request);
+        if (!IpNetworkMatcher.matchesAny(ip, properties.getIpAllowlist())) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
             response.setCharacterEncoding(StandardCharsets.UTF_8.name());
-
-            String json = "{\n" +
-                    "  \"success\": false,\n" +
-                    "  \"error\": {\n" +
-                    "    \"code\": \"IP_ACCESS_DENIED\",\n" +
-                    "    \"message\": \"Access denied: client IP address is not authorized in the IP allowlist.\",\n" +
-                    "    \"details\": [\n" +
-                    "      \"Client IP: " + ip + "\"\n" +
-                    "    ]\n" +
-                    "  }\n" +
-                    "}";
-            response.getWriter().write(json);
+            response.getWriter().write("{\"success\":false,\"error\":{\"code\":\"IP_ACCESS_DENIED\",\"message\":\"Client IP address is not authorized\"}}");
             return;
         }
         filterChain.doFilter(request, response);
-    }
-
-    private String clientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
     }
 }

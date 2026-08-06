@@ -13,6 +13,7 @@ import com.corvian.payroll_payment_orchestrator.payroll.presentation.request.Rej
 import com.corvian.payroll_payment_orchestrator.payroll.presentation.response.PayrollBatchResponse;
 import com.corvian.payroll_payment_orchestrator.payroll.presentation.response.PayrollPaymentResponse;
 import com.corvian.payroll_payment_orchestrator.shared.response.ApiResponse;
+import com.corvian.payroll_payment_orchestrator.shared.util.MaskingUtils;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -133,11 +134,11 @@ public class PayrollBatchController {
         return new PayrollPaymentResponse(
                 payment.id(),
                 payment.employeeDocumentType(),
-                payment.employeeDocumentNumber(),
+                MaskingUtils.maskDocument(payment.employeeDocumentNumber()),
                 payment.employeeFullName(),
                 payment.bankCode(),
                 payment.accountType(),
-                payment.accountNumber(),
+                MaskingUtils.maskAccount(payment.accountNumber()),
                 payment.amount(),
                 payment.status()
         );

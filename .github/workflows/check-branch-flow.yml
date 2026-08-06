@@ -1,35 +1,32 @@
-name: Check Branch Flow
+name: Check branch flow
 
 on:
   pull_request:
-    branches:
-      - main
-      - develop
+    branches: [develop, main]
+
+permissions:
+  contents: read
 
 jobs:
-  check-source: # Este nombre debe coincidir con el 'context' en tus Rulesets
+  check-source:
+    name: Validate source branch
     runs-on: ubuntu-latest
     steps:
       - name: Validate branch source
+        shell: bash
         run: |
+          set -euo pipefail
           SOURCE_BRANCH="${{ github.head_ref }}"
           TARGET_BRANCH="${{ github.base_ref }}"
 
-          echo "Evaluando flujo: $SOURCE_BRANCH -> $TARGET_BRANCH"
+          echo "Validating flow: ${SOURCE_BRANCH} -> ${TARGET_BRANCH}"
 
-          # REGLA 1: Solo develop -> main
-          if [ "$TARGET_BRANCH" = "main" ] && [ "$SOURCE_BRANCH" != "develop" ]; then
-            echo "::error::Flujo inválido. Solo se permite merge a 'main' desde 'develop'."
+          if [[ "${TARGET_BRANCH}" == "main" && "${SOURCE_BRANCH}" != "develop" ]]; then
+            echo "::error::Only develop may be merged into main."
             exit 1
           fi
 
-          # REGLA 2: Solo feature/* -> develop
-          if [ "$TARGET_BRANCH" = "develop" ]; then
-            if [[ ! "$SOURCE_BRANCH" =~ ^feature/ ]]; then
-              echo "::error::Flujo inválido. Solo se permiten merges a 'develop' desde ramas 'feature/*'."
-              exit 1
-            fi
+          if [[ "${TARGET_BRANCH}" == "develop" && ! "${SOURCE_BRANCH}" =~ ^feature/ ]]; then
+            echo "::error::Only feature/* branches may be merged into develop."
+            exit 1
           fi
-
-          echo "Flujo de ramas válido." 
-          
