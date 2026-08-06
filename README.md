@@ -1,5 +1,11 @@
 <div align="center">
 
+<img
+  src="logo-payroll-payment-orchestrator.png"
+  alt="Payroll Payment Orchestrator"
+  width="220"
+/>
+
 # Payroll Payment Orchestrator
 
 **Middleware financiero B2B multi-tenant para orquestar pagos masivos de nómina con seguridad, idempotencia, auditoría y conectores bancarios reemplazables.**
