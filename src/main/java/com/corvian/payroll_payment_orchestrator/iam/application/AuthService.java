@@ -37,7 +37,10 @@ public class AuthService {
             throw new DomainException("INVALID_CREDENTIALS", "Invalid credentials");
         }
         List<String> authorities = AuthorityService.authorities(user);
-        return new TokenResult(jwtService.issueToken(user.getId().toString(), "user", authorities), authorities);
+        boolean platformAdmin = AuthorityService.roleNames(user).contains("ADMIN");
+        String token = jwtService.issueToken(
+                user.getId().toString(), "user", authorities, user.getTenantId(), user.getCompanyId(), platformAdmin);
+        return new TokenResult(token, authorities, jwtService.expirationSeconds());
     }
 
     @Transactional
@@ -53,8 +56,10 @@ public class AuthService {
         client.setLastUsedAt(OffsetDateTime.now());
         apiClientRepository.save(client);
         List<String> scopes = Arrays.stream(client.getScopes().split(" ")).filter(scope -> !scope.isBlank()).toList();
-        return new TokenResult(jwtService.issueToken(client.getClientId(), "client", scopes), scopes);
+        String token = jwtService.issueToken(
+                client.getClientId(), "client", scopes, client.getTenantId(), client.getCompanyId(), false);
+        return new TokenResult(token, scopes, jwtService.expirationSeconds());
     }
 
-    public record TokenResult(String token, List<String> authorities) {}
+    public record TokenResult(String token, List<String> authorities, long expiresInSeconds) {}
 }

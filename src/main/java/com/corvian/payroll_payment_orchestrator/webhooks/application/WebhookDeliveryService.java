@@ -1,109 +1,128 @@
 package com.corvian.payroll_payment_orchestrator.webhooks.application;
 
-import com.corvian.payroll_payment_orchestrator.payroll.application.port.PayrollBatchRepositoryPort;
+import com.corvian.payroll_payment_orchestrator.shared.crypto.CryptoService;
+import com.corvian.payroll_payment_orchestrator.shared.outbound.OutboundUrlPolicy;
 import com.corvian.payroll_payment_orchestrator.webhooks.infrastructure.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.http.MediaType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestClient;
 
-import java.time.OffsetDateTime;
+import java.net.URI;
+import java.net.http.*;
+import java.nio.charset.StandardCharsets;
+import java.time.*;
 import java.util.Map;
 import java.util.UUID;
 
 @Service
 public class WebhookDeliveryService {
+    private static final Logger log = LoggerFactory.getLogger(WebhookDeliveryService.class);
     private final JpaWebhookEndpointRepository endpointRepository;
     private final JpaWebhookDeliveryAttemptRepository attemptRepository;
-    private final PayrollBatchRepositoryPort payrollBatchRepositoryPort;
+    private final WebhookAttemptStore attemptStore;
     private final WebhookSigner signer;
     private final ObjectMapper objectMapper;
-    private final RestClient restClient = RestClient.create();
+    private final CryptoService cryptoService;
+    private final WebhookSecretStore secretStore;
+    private final OutboundUrlPolicy outboundUrlPolicy;
+    private final Clock clock;
+    private final int maxAttempts;
+    private final int connectTimeoutMs;
+    private final int readTimeoutMs;
+    private final long sendingLeaseMs;
+    private final HttpClient httpClient;
 
     public WebhookDeliveryService(
             JpaWebhookEndpointRepository endpointRepository,
             JpaWebhookDeliveryAttemptRepository attemptRepository,
-            PayrollBatchRepositoryPort payrollBatchRepositoryPort,
+            WebhookAttemptStore attemptStore,
             WebhookSigner signer,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            CryptoService cryptoService,
+            WebhookSecretStore secretStore,
+            OutboundUrlPolicy outboundUrlPolicy,
+            Clock clock,
+            @Value("${app.webhooks.max-attempts:5}") int maxAttempts,
+            @Value("${app.webhooks.connect-timeout-ms:5000}") int connectTimeoutMs,
+            @Value("${app.webhooks.read-timeout-ms:15000}") int readTimeoutMs,
+            @Value("${app.webhooks.sending-lease-ms:120000}") long sendingLeaseMs
     ) {
-        this.endpointRepository = endpointRepository;
-        this.attemptRepository = attemptRepository;
-        this.payrollBatchRepositoryPort = payrollBatchRepositoryPort;
-        this.signer = signer;
-        this.objectMapper = objectMapper;
+        this.endpointRepository = endpointRepository; this.attemptRepository = attemptRepository;
+        this.attemptStore = attemptStore; this.signer = signer; this.objectMapper = objectMapper;
+        this.cryptoService = cryptoService; this.secretStore = secretStore; this.outboundUrlPolicy = outboundUrlPolicy; this.clock = clock;
+        this.maxAttempts = Math.max(1, maxAttempts);
+        this.connectTimeoutMs = Math.max(100, connectTimeoutMs);
+        this.readTimeoutMs = Math.max(100, readTimeoutMs);
+        this.sendingLeaseMs = Math.max(this.readTimeoutMs + 5_000L, sendingLeaseMs);
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(this.connectTimeoutMs))
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .build();
     }
 
     @Transactional
     public void publish(UUID companyId, String event, UUID resourceId, Object data) {
-        endpointRepository.findByCompanyIdAndEnabledTrue(companyId).forEach(endpoint -> deliver(endpoint, event, resourceId, data, 1));
-    }
-
-    private void deliver(WebhookEndpointEntity endpoint, String event, UUID resourceId, Object data, int attemptNumber) {
-        WebhookDeliveryAttemptEntity attempt = new WebhookDeliveryAttemptEntity();
-        attempt.setId(UUID.randomUUID());
-        attempt.setWebhookEndpointId(endpoint.getId());
-        attempt.setEvent(event);
-        attempt.setResourceId(resourceId);
-        attempt.setAttempt(attemptNumber);
-        attempt.setCreatedAt(OffsetDateTime.now());
         try {
-            String payload = objectMapper.writeValueAsString(Map.of("event", event, "resourceId", resourceId, "data", data, "occurredAt", OffsetDateTime.now().toString()));
-            String timestamp = String.valueOf(System.currentTimeMillis() / 1000);
-            String signature = signer.sign(endpoint.getSecret(), timestamp, payload);
-            Integer status = restClient.post()
-                    .uri(endpoint.getUrl())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .header("X-Webhook-Timestamp", timestamp)
-                    .header("X-Webhook-Signature", signature)
-                    .body(payload)
-                    .retrieve()
-                    .toBodilessEntity()
-                    .getStatusCode()
-                    .value();
-            attempt.setHttpStatus(status);
-            attempt.setStatus(status >= 200 && status < 300 ? "DELIVERED" : "RETRY_PENDING");
-            if (status < 200 || status >= 300) attempt.setNextRetryAt(nextRetry(attemptNumber));
+            UUID eventId = UUID.randomUUID();
+            OffsetDateTime occurredAt = OffsetDateTime.now(clock);
+            String payload = objectMapper.writeValueAsString(Map.of(
+                    "id", eventId, "event", event, "resourceId", resourceId,
+                    "occurredAt", occurredAt, "data", data));
+            String payloadHash = cryptoService.hmacSha256(payload);
+            for (WebhookEndpointEntity endpoint : endpointRepository.findByCompanyIdAndEnabledTrue(companyId)) {
+                WebhookDeliveryAttemptEntity attempt = new WebhookDeliveryAttemptEntity();
+                attempt.setId(UUID.randomUUID()); attempt.setWebhookEndpointId(endpoint.getId()); attempt.setEventId(eventId);
+                attempt.setEvent(event); attempt.setResourceId(resourceId); attempt.setAttempt(1); attempt.setStatus("PENDING");
+                attempt.setPayload(payload); attempt.setPayloadHash(payloadHash); attempt.setCreatedAt(occurredAt);
+                attempt.setUpdatedAt(occurredAt); attemptRepository.save(attempt);
+            }
         } catch (Exception ex) {
-            attempt.setStatus("RETRY_PENDING");
-            attempt.setErrorMessage(ex.getMessage() == null ? "Webhook delivery failed" : ex.getMessage().substring(0, Math.min(500, ex.getMessage().length())));
-            attempt.setNextRetryAt(nextRetry(attemptNumber));
+            throw new IllegalStateException("Unable to persist webhook event", ex);
         }
-        attemptRepository.save(attempt);
     }
 
     @Scheduled(fixedDelayString = "${app.webhooks.retry-fixed-delay-ms:60000}")
-    @Transactional
-    public void retryPending() {
-        attemptRepository.findTop50ByStatusAndNextRetryAtBeforeOrderByCreatedAtAsc("RETRY_PENDING", OffsetDateTime.now()).forEach(previous -> {
-            endpointRepository.findById(previous.getWebhookEndpointId()).filter(WebhookEndpointEntity::getEnabled).ifPresent(endpoint -> {
-                if (previous.getAttempt() < 5) {
-                    Object payloadData = Map.of("retry", true);
-                    if (payrollBatchRepositoryPort != null && previous.getEvent() != null && previous.getEvent().startsWith("payroll.batch") && previous.getResourceId() != null) {
-                        payloadData = payrollBatchRepositoryPort.findById(previous.getResourceId()).orElse(null);
-                        if (payloadData == null) {
-                            payloadData = Map.of("retry", true);
-                        }
-                    }
-                    deliver(endpoint, previous.getEvent(), previous.getResourceId(), payloadData, previous.getAttempt() + 1);
-                    previous.setStatus("RETRIED");
-                } else {
-                    previous.setStatus("FAILED");
-                }
-                attemptRepository.save(previous);
-            });
-        });
+    public void deliverPending() {
+        for (UUID id : attemptStore.dueIds(50, sendingLeaseMs)) {
+            WebhookDeliveryAttemptEntity attempt = attemptStore.claim(id, sendingLeaseMs);
+            if (attempt == null) continue;
+            WebhookEndpointEntity endpoint = endpointRepository.findById(attempt.getWebhookEndpointId()).orElse(null);
+            if (endpoint != null && Boolean.TRUE.equals(endpoint.getEnabled())) {
+                deliver(endpoint, attempt);
+            } else {
+                attemptStore.failed(id, null, "Webhook endpoint is disabled or missing", maxAttempts);
+            }
+        }
     }
 
-    private OffsetDateTime nextRetry(int attempt) {
-        long seconds = switch (attempt) {
-            case 1 -> 60;
-            case 2 -> 300;
-            case 3 -> 900;
-            default -> 1800;
-        };
-        return OffsetDateTime.now().plusSeconds(seconds);
+    private void deliver(WebhookEndpointEntity endpoint, WebhookDeliveryAttemptEntity attempt) {
+        try {
+            URI uri = outboundUrlPolicy.validate(endpoint.getUrl());
+            String timestamp = String.valueOf(Instant.now(clock).getEpochSecond());
+            String secret = secretStore.getSigningSecret(endpoint.getId());
+            String signature = signer.sign(secret, timestamp, attempt.getPayload());
+            HttpRequest request = HttpRequest.newBuilder(uri).timeout(Duration.ofMillis(readTimeoutMs))
+                    .header("Content-Type", "application/json")
+                    .header("User-Agent", "Payroll-Payment-Orchestrator-Webhook/1.0")
+                    .header("X-Webhook-Id", attempt.getEventId().toString())
+                    .header("X-Webhook-Event", attempt.getEvent())
+                    .header("X-Webhook-Timestamp", timestamp)
+                    .header("X-Webhook-Signature", signature)
+                    .POST(HttpRequest.BodyPublishers.ofString(attempt.getPayload(), StandardCharsets.UTF_8)).build();
+            HttpResponse<Void> response = httpClient.send(request, HttpResponse.BodyHandlers.discarding());
+            int status = response.statusCode();
+            if (status >= 200 && status < 300) attemptStore.delivered(attempt.getId(), status);
+            else attemptStore.failed(attempt.getId(), status, "Webhook endpoint returned HTTP " + status, maxAttempts);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            attemptStore.failed(attempt.getId(), null, "Webhook delivery interrupted", maxAttempts);
+        } catch (Exception ex) {
+            log.warn("Webhook delivery failed. eventId={}, endpointId={}", attempt.getEventId(), endpoint.getId());
+            attemptStore.failed(attempt.getId(), null, ex.getMessage(), maxAttempts);
+        }
     }
 }

@@ -35,6 +35,14 @@ public class AuditLogController {
                 entity.getResourceType(),
                 entity.getResourceId(),
                 entity.getDescription(),
+                entity.getActor(),
+                entity.getActorType(),
+                entity.getTenantId(),
+                entity.getCompanyId(),
+                entity.getCorrelationId(),
+                entity.getResult(),
+                entity.getOldStatus(),
+                entity.getNewStatus(),
                 entity.getCreatedAt()
         );
     }

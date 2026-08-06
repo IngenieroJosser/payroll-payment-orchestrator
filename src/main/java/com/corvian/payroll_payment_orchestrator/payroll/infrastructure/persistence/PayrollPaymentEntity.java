@@ -3,26 +3,11 @@ package com.corvian.payroll_payment_orchestrator.payroll.infrastructure.persiste
 import com.corvian.payroll_payment_orchestrator.payroll.domain.enums.AccountType;
 import com.corvian.payroll_payment_orchestrator.payroll.domain.enums.PayrollPaymentStatus;
 import com.corvian.payroll_payment_orchestrator.shared.crypto.EncryptedStringConverter;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Convert;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
-@Getter
-@Setter
-@NoArgsConstructor
 @Entity
 @Table(name = "payroll_payments")
 public class PayrollPaymentEntity {
@@ -69,4 +54,31 @@ public class PayrollPaymentEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 40)
     private PayrollPaymentStatus status;
+
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+    public PayrollBatchEntity getBatch() { return batch; }
+    public void setBatch(PayrollBatchEntity batch) { this.batch = batch; }
+    public String getEmployeeDocumentType() { return employeeDocumentType; }
+    public void setEmployeeDocumentType(String employeeDocumentType) { this.employeeDocumentType = employeeDocumentType; }
+    public String getEmployeeDocumentNumber() { return employeeDocumentNumber; }
+    public void setEmployeeDocumentNumber(String employeeDocumentNumber) { this.employeeDocumentNumber = employeeDocumentNumber; }
+    public String getEmployeeDocumentHash() { return employeeDocumentHash; }
+    public void setEmployeeDocumentHash(String employeeDocumentHash) { this.employeeDocumentHash = employeeDocumentHash; }
+    public String getEmployeeFullName() { return employeeFullName; }
+    public void setEmployeeFullName(String employeeFullName) { this.employeeFullName = employeeFullName; }
+    public String getBankCode() { return bankCode; }
+    public void setBankCode(String bankCode) { this.bankCode = bankCode; }
+    public AccountType getAccountType() { return accountType; }
+    public void setAccountType(AccountType accountType) { this.accountType = accountType; }
+    public String getAccountNumber() { return accountNumber; }
+    public void setAccountNumber(String accountNumber) { this.accountNumber = accountNumber; }
+    public String getAccountNumberHash() { return accountNumberHash; }
+    public void setAccountNumberHash(String accountNumberHash) { this.accountNumberHash = accountNumberHash; }
+    public String getAccountNumberLast4() { return accountNumberLast4; }
+    public void setAccountNumberLast4(String accountNumberLast4) { this.accountNumberLast4 = accountNumberLast4; }
+    public BigDecimal getAmount() { return amount; }
+    public void setAmount(BigDecimal amount) { this.amount = amount; }
+    public PayrollPaymentStatus getStatus() { return status; }
+    public void setStatus(PayrollPaymentStatus status) { this.status = status; }
 }

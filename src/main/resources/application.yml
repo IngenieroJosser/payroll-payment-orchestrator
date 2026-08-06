@@ -1,43 +1,112 @@
 spring:
   application:
     name: payroll-payment-orchestrator
-
-  profiles:
-    active: dev
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+  threads:
+    virtual:
+      enabled: true
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
+  forward-headers-strategy: framework
+  shutdown: graceful
+  error:
+    include-message: never
+    include-stacktrace: never
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       probes:
         enabled: true
+      show-details: when_authorized
+      group:
+        liveness:
+          include: livenessState,ping
+        readiness:
+          include: readinessState,db,rabbit
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+  info:
+    build:
+      enabled: true
+  observations:
+    key-values:
+      service: payroll-payment-orchestrator
+  tracing:
+    sampling:
+      probability: ${MANAGEMENT_TRACING_SAMPLING_PROBABILITY:0.10}
+
+springdoc:
+  api-docs:
+    enabled: ${SPRINGDOC_ENABLED:false}
+  swagger-ui:
+    enabled: ${SPRINGDOC_ENABLED:false}
 
 app:
   api:
     base-path: /api/v1
-  bank:
-    provider: sandbox
+  deployment:
+    payment-execution-enabled: ${APP_PAYMENT_EXECUTION_ENABLED:false}
   security:
-    jwt-secret: ${APP_JWT_SECRET:CHANGE_ME_DEV_SECRET_CHANGE_ME_DEV_SECRET_32_BYTES_MIN}
+    jwt-secret: ${APP_JWT_SECRET}
+    jwt-issuer: ${APP_JWT_ISSUER:payroll-payment-orchestrator}
+    jwt-audience: ${APP_JWT_AUDIENCE:payroll-api}
     jwt-expiration-minutes: ${APP_JWT_EXPIRATION_MINUTES:60}
+    jwt-clock-skew-seconds: ${APP_JWT_CLOCK_SKEW_SECONDS:30}
     require-idempotency-key: ${APP_REQUIRE_IDEMPOTENCY_KEY:true}
     ip-allowlist-enabled: ${APP_IP_ALLOWLIST_ENABLED:false}
-    ip-allowlist: ${APP_IP_ALLOWLIST:127.0.0.1,0:0:0:0:0:0:0:1}
+    ip-allowlist: ${APP_IP_ALLOWLIST:}
+    trusted-proxy-addresses: ${APP_TRUSTED_PROXY_ADDRESSES:}
     mtls-enabled: ${APP_MTLS_ENABLED:false}
+    mtls-allowed-subjects: ${APP_MTLS_ALLOWED_SUBJECTS:}
     rate-limit-requests: ${APP_RATE_LIMIT_REQUESTS:120}
     rate-limit-window-seconds: ${APP_RATE_LIMIT_WINDOW_SECONDS:60}
+  idempotency:
+    lock-lease-seconds: ${APP_IDEMPOTENCY_LOCK_LEASE_SECONDS:300}
+    cleanup-fixed-delay-ms: ${APP_IDEMPOTENCY_CLEANUP_FIXED_DELAY_MS:3600000}
   crypto:
-    encryption-key: ${APP_ENCRYPTION_KEY:0123456789ABCDEF0123456789ABCDEF}
-    hash-key: ${APP_HASH_KEY:CHANGE_ME_HASH_KEY_CHANGE_ME_HASH_KEY}
+    encryption-key: ${APP_ENCRYPTION_KEY}
+    previous-encryption-key: ${APP_PREVIOUS_ENCRYPTION_KEY:}
+    hash-key: ${APP_HASH_KEY}
   bootstrap:
+    enabled: ${APP_BOOTSTRAP_ENABLED:false}
     admin:
-      email: ${APP_BOOTSTRAP_ADMIN_EMAIL:admin@corvian.local}
-      password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:Admin123!}
+      email: ${APP_BOOTSTRAP_ADMIN_EMAIL:}
+      password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:}
+  bank:
+    sandbox-fallback-enabled: ${APP_BANK_SANDBOX_FALLBACK_ENABLED:false}
+    status-poll-delay-ms: ${APP_BANK_STATUS_POLL_DELAY_MS:30000}
+    status-poll-fixed-delay-ms: ${APP_BANK_STATUS_POLL_FIXED_DELAY_MS:15000}
+    status-poll-lease-ms: ${APP_BANK_STATUS_POLL_LEASE_MS:360000}
+    max-status-poll-attempts: ${APP_BANK_MAX_STATUS_POLL_ATTEMPTS:120}
+    governance:
+      allow-uncertified-providers: ${APP_BANK_ALLOW_UNCERTIFIED_PROVIDERS:false}
+      certified-providers: ${APP_BANK_CERTIFIED_PROVIDERS:}
+  observability:
+    backlog-refresh-ms: ${APP_OBSERVABILITY_BACKLOG_REFRESH_MS:30000}
+  messaging:
+    outbox-fixed-delay-ms: ${APP_OUTBOX_FIXED_DELAY_MS:1000}
+    outbox-batch-size: ${APP_OUTBOX_BATCH_SIZE:50}
+    max-publish-attempts: ${APP_OUTBOX_MAX_PUBLISH_ATTEMPTS:10}
   webhooks:
     retry-fixed-delay-ms: ${APP_WEBHOOK_RETRY_FIXED_DELAY_MS:60000}
+    max-attempts: ${APP_WEBHOOK_MAX_ATTEMPTS:5}
+    connect-timeout-ms: ${APP_WEBHOOK_CONNECT_TIMEOUT_MS:5000}
+    read-timeout-ms: ${APP_WEBHOOK_READ_TIMEOUT_MS:15000}
+    sending-lease-ms: ${APP_WEBHOOK_SENDING_LEASE_MS:120000}
+  outbound:
+    allow-http: ${APP_OUTBOUND_ALLOW_HTTP:false}
+    allow-private-networks: ${APP_OUTBOUND_ALLOW_PRIVATE_NETWORKS:false}
+    allowed-hosts: ${APP_OUTBOUND_ALLOWED_HOSTS:}

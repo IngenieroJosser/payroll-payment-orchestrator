@@ -9,5 +9,13 @@ public record AuditLogResponse(
         String resourceType,
         UUID resourceId,
         String description,
+        String actor,
+        String actorType,
+        UUID tenantId,
+        UUID companyId,
+        String correlationId,
+        String result,
+        String oldStatus,
+        String newStatus,
         OffsetDateTime createdAt
 ) {}

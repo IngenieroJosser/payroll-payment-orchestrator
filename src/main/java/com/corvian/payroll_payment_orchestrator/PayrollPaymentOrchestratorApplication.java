@@ -8,8 +8,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 public class PayrollPaymentOrchestratorApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(PayrollPaymentOrchestratorApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(PayrollPaymentOrchestratorApplication.class, args);
+    }
 
 }

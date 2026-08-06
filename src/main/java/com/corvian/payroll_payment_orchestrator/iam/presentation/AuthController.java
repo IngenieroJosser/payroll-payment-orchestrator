@@ -18,12 +18,12 @@ public class AuthController {
     @PostMapping("/auth/login")
     public ApiResponse<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         AuthService.TokenResult result = authService.login(request.email(), request.password());
-        return ApiResponse.ok(new AuthResponse("Bearer", result.token(), 3600, result.authorities()));
+        return ApiResponse.ok(new AuthResponse("Bearer", result.token(), result.expiresInSeconds(), result.authorities()));
     }
 
     @PostMapping("/oauth/token")
     public ApiResponse<AuthResponse> clientCredentials(@Valid @RequestBody ClientCredentialsTokenRequest request) {
         AuthService.TokenResult result = authService.clientCredentials(request.grantType(), request.clientId(), request.clientSecret());
-        return ApiResponse.ok(new AuthResponse("Bearer", result.token(), 3600, result.authorities()));
+        return ApiResponse.ok(new AuthResponse("Bearer", result.token(), result.expiresInSeconds(), result.authorities()));
     }
 }

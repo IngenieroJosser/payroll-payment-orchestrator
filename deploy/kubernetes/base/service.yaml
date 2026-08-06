@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: payroll-payment-orchestrator
+  labels:
+    app.kubernetes.io/name: payroll-payment-orchestrator
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: payroll-payment-orchestrator
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
