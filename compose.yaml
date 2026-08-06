@@ -1,51 +1,67 @@
-version: '3.8'
-
 services:
   postgres:
-    image: 'josser00/postgres:latest'
+    image: postgres:16-alpine
     environment:
-      - POSTGRES_DB=payroll-payment-orchestrator
-      - POSTGRES_PASSWORD=secret
-      - POSTGRES_USER=postgres
+      POSTGRES_DB: ${POSTGRES_DB:-payroll_orchestrator}
+      POSTGRES_USER: ${POSTGRES_USER:-payroll}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     ports:
-      - '5432:5432'
-    restart: always
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      retries: 5
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
       timeout: 5s
+      retries: 20
+    restart: unless-stopped
 
   rabbitmq:
-    image: 'josser00/rabbitmq:latest'
+    image: rabbitmq:4-management-alpine
     environment:
-      - RABBITMQ_DEFAULT_USER=postgres
-      - RABBITMQ_DEFAULT_PASS=secret
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-payroll}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Set RABBITMQ_PASSWORD in .env}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
     ports:
-      - '5672:5672'
-      - '15672:15672' # opcional, web UI
-    restart: always
+      - "127.0.0.1:${RABBITMQ_PORT:-5672}:5672"
+      - "127.0.0.1:${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 10s
-      retries: 5
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
       timeout: 5s
+      retries: 20
+    restart: unless-stopped
 
   payroll-backend:
-    image: 'josser00/payroll-backend:latest' # reemplaza con tu imagen del backend si la subes
+    build:
+      context: .
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/payroll-payment-orchestrator
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: secret
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-payroll_orchestrator}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-payroll}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SPRING_RABBITMQ_HOST: rabbitmq
-      SPRING_RABBITMQ_PORT: 5672
-      SPRING_RABBITMQ_USERNAME: postgres
-      SPRING_RABBITMQ_PASSWORD: secret
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USER:-payroll}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      APP_JWT_SECRET: ${APP_JWT_SECRET}
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY}
+      APP_HASH_KEY: ${APP_HASH_KEY}
+      APP_PREVIOUS_ENCRYPTION_KEY: ${APP_PREVIOUS_ENCRYPTION_KEY:-}
+      APP_PAYMENT_EXECUTION_ENABLED: ${APP_PAYMENT_EXECUTION_ENABLED:-false}
+      APP_BANK_ALLOW_UNCERTIFIED_PROVIDERS: ${APP_BANK_ALLOW_UNCERTIFIED_PROVIDERS:-false}
+      APP_BANK_SANDBOX_FALLBACK_ENABLED: ${APP_BANK_SANDBOX_FALLBACK_ENABLED:-true}
+      APP_BANK_CERTIFIED_PROVIDERS: ${APP_BANK_CERTIFIED_PROVIDERS:-}
+      APP_BOOTSTRAP_ENABLED: ${APP_BOOTSTRAP_ENABLED:-false}
+      APP_BOOTSTRAP_ADMIN_EMAIL: ${APP_BOOTSTRAP_ADMIN_EMAIL:-}
+      APP_BOOTSTRAP_ADMIN_PASSWORD: ${APP_BOOTSTRAP_ADMIN_PASSWORD}
     ports:
-      - '8080:8080'
+      - "127.0.0.1:${SERVER_PORT:-8080}:8080"
     depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    restart: always
+      postgres: { condition: service_healthy }
+      rabbitmq: { condition: service_healthy }
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  rabbitmq_data:

@@ -1,0 +1,65 @@
+groups:
+  - name: payroll-payment-orchestrator
+    rules:
+      - alert: PayrollOrchestratorUnavailable
+        expr: up{job="payroll-payment-orchestrator"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: Payroll Payment Orchestrator is unavailable
+          runbook: docs/operations/RUNBOOK.md
+
+      - alert: PayrollApiHighServerErrorRate
+        expr: |
+          sum(rate(http_server_requests_seconds_count{application="payroll-payment-orchestrator",status=~"5.."}[5m]))
+          /
+          clamp_min(sum(rate(http_server_requests_seconds_count{application="payroll-payment-orchestrator"}[5m])), 1)
+          > 0.02
+        for: 10m
+        labels: { severity: critical }
+        annotations:
+          summary: Server error rate exceeds 2%
+
+      - alert: PayrollApiHighLatency
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(http_server_requests_seconds_bucket{application="payroll-payment-orchestrator"}[10m]))) > 1
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: API p95 latency exceeds one second
+
+      - alert: PayrollOutboxDeadEvents
+        expr: payroll_outbox_events{status="DEAD"} > 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: Dead outbox events require operator intervention
+
+      - alert: PayrollOutboxRetryBacklog
+        expr: payroll_outbox_events{status="RETRY"} > 25
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: Outbox retry backlog is growing
+
+      - alert: PayrollInboxDeadMessages
+        expr: payroll_inbox_messages{status="DEAD"} > 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: Dead inbox messages require investigation
+
+      - alert: PayrollBankFailedSubmissions
+        expr: payroll_bank_submissions_current{status="FAILED"} > 0
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: One or more bank submissions are in a failed terminal state
+
+      - alert: PayrollWebhookFailedDeliveries
+        expr: payroll_webhook_deliveries_current{status="FAILED"} > 0
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: Webhook deliveries remain failed

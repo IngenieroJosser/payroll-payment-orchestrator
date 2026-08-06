@@ -1,0 +1,32 @@
+spring:
+  main:
+    banner-mode: "off"
+  task:
+    scheduling:
+      enabled: false
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
+
+app:
+  deployment:
+    payment-execution-enabled: true
+  security:
+    jwt-secret: test-jwt-secret-with-at-least-thirty-two-bytes
+    require-idempotency-key: false
+    ip-allowlist-enabled: false
+    mtls-enabled: false
+  crypto:
+    encryption-key: test-encryption-key-with-at-least-thirty-two-bytes
+    hash-key: test-hash-key-with-at-least-thirty-two-bytes
+  bootstrap:
+    enabled: false
+  bank:
+    sandbox-fallback-enabled: true
+    governance:
+      allow-uncertified-providers: true
+      certified-providers: []
+  outbound:
+    allow-http: true
+    allow-private-networks: true

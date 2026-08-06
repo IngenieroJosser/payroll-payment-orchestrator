@@ -15,5 +15,5 @@ public record CreatePayrollBatchRequest(
         @NotNull UUID sourceAccountId,
         @NotBlank @Size(min = 3, max = 3) String currency,
         @NotNull LocalDate scheduledDate,
-        @Valid @NotEmpty List<CreatePayrollPaymentRequest> payments
+        @Valid @NotEmpty @Size(max = 10000) List<CreatePayrollPaymentRequest> payments
 ) {}

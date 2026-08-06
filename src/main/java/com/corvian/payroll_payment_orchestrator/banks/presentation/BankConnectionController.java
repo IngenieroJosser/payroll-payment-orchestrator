@@ -18,7 +18,15 @@ public class BankConnectionController {
     @PostMapping
     @PreAuthorize("hasAuthority('bank:manage')")
     public ResponseEntity<ApiResponse<BankConnectionResponse>> create(@Valid @RequestBody CreateBankConnectionRequest request) {
-        BankConnectionEntity saved = service.create(request.companyId(), request.bankCode(), request.baseUrl(), request.apiToken());
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(new BankConnectionResponse(saved.getId(), saved.getCompanyId(), saved.getBankCode(), saved.getBaseUrl(), saved.getStatus(), saved.getCreatedAt())));
+        BankConnectionEntity saved = service.create(request.companyId(), request.bankCode(), request.providerKey(),
+                request.environment(), request.baseUrl(), request.apiToken(), request.credentialReference(),
+                request.connectTimeoutMs(), request.readTimeoutMs());
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(toResponse(saved)));
+    }
+
+    private BankConnectionResponse toResponse(BankConnectionEntity saved) {
+        return new BankConnectionResponse(saved.getId(), saved.getCompanyId(), saved.getBankCode(), saved.getProviderKey(),
+                saved.getEnvironment(), saved.getBaseUrl(), saved.getConnectTimeoutMs(), saved.getReadTimeoutMs(),
+                saved.getStatus(), saved.getCreatedAt(), saved.getUpdatedAt());
     }
 }

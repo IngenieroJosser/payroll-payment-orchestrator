@@ -8,22 +8,30 @@ import org.springframework.stereotype.Component;
 @Component
 @Converter
 public class EncryptedStringConverter implements AttributeConverter<String, String> {
-    private static CryptoService cryptoService;
+    private static volatile CryptoService cryptoService;
 
     @Autowired
-    public void setCryptoService(CryptoService cryptoService) {
-        EncryptedStringConverter.cryptoService = cryptoService;
+    public void setCryptoService(CryptoService service) {
+        EncryptedStringConverter.cryptoService = service;
     }
 
     @Override
     public String convertToDatabaseColumn(String attribute) {
-        if (attribute == null || cryptoService == null) return attribute;
-        return cryptoService.encrypt(attribute);
+        if (attribute == null) return null;
+        return requireCryptoService().encrypt(attribute);
     }
 
     @Override
     public String convertToEntityAttribute(String dbData) {
-        if (dbData == null || cryptoService == null) return dbData;
-        return cryptoService.decrypt(dbData);
+        if (dbData == null) return null;
+        return requireCryptoService().decrypt(dbData);
+    }
+
+    private CryptoService requireCryptoService() {
+        CryptoService service = cryptoService;
+        if (service == null) {
+            throw new IllegalStateException("CryptoService is not initialized; refusing to persist or expose plaintext data");
+        }
+        return service;
     }
 }

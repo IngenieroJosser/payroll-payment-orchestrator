@@ -1,15 +1,11 @@
 package com.corvian.payroll_payment_orchestrator.iam.infrastructure;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-@Getter @Setter @NoArgsConstructor
 @Entity
 @Table(name = "roles")
 public class RoleEntity {
@@ -29,4 +25,15 @@ public class RoleEntity {
             inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
     private Set<PermissionEntity> permissions = new HashSet<>();
+
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    public Set<PermissionEntity> getPermissions() { return permissions; }
+    public void setPermissions(Set<PermissionEntity> permissions) {
+        this.permissions = permissions == null ? new HashSet<>() : permissions;
+    }
 }

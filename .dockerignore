@@ -1,6 +1,9 @@
 .git
-.gitignore
-target
-*.log
+.github
 .idea
 .vscode
+target
+*.iml
+*.log
+.env
+.DS_Store

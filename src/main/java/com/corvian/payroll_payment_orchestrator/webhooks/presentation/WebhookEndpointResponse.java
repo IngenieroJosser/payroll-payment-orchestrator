@@ -8,5 +8,7 @@ public record WebhookEndpointResponse(
         UUID companyId,
         String url,
         Boolean enabled,
-        OffsetDateTime createdAt
+        OffsetDateTime createdAt,
+        OffsetDateTime updatedAt,
+        String signingSecret
 ) {}

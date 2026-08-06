@@ -2,6 +2,7 @@ package com.corvian.payroll_payment_orchestrator.tenants.application;
 
 import com.corvian.payroll_payment_orchestrator.audit.application.AuditLogService;
 import com.corvian.payroll_payment_orchestrator.shared.exception.DomainException;
+import com.corvian.payroll_payment_orchestrator.shared.security.context.ResourceAccessService;
 import com.corvian.payroll_payment_orchestrator.tenants.infrastructure.JpaTenantRepository;
 import com.corvian.payroll_payment_orchestrator.tenants.infrastructure.TenantEntity;
 import com.corvian.payroll_payment_orchestrator.tenants.infrastructure.TenantStatus;
@@ -16,14 +17,17 @@ import java.util.UUID;
 public class TenantService {
     private final JpaTenantRepository repository;
     private final AuditLogService auditLogService;
+    private final ResourceAccessService accessService;
 
-    public TenantService(JpaTenantRepository repository, AuditLogService auditLogService) {
+    public TenantService(JpaTenantRepository repository, AuditLogService auditLogService, ResourceAccessService accessService) {
         this.repository = repository;
         this.auditLogService = auditLogService;
+        this.accessService = accessService;
     }
 
     @Transactional
     public TenantEntity create(String name, String slug) {
+        accessService.requirePlatformAdministration();
         String normalizedSlug = slug.trim().toLowerCase();
         if (repository.existsBySlug(normalizedSlug)) {
             throw new DomainException("TENANT_SLUG_ALREADY_EXISTS", "Tenant slug already exists");
@@ -37,17 +41,19 @@ public class TenantService {
         entity.setCreatedAt(now);
         entity.setUpdatedAt(now);
         TenantEntity saved = repository.save(entity);
-        auditLogService.record("TENANT_CREATED", "TENANT", saved.getId(), "Tenant created: " + saved.getSlug());
+        auditLogService.record("TENANT_CREATED", "TENANT", saved.getId(), "Tenant created", saved.getId(), null);
         return saved;
     }
 
     @Transactional(readOnly = true)
     public List<TenantEntity> findAll() {
+        accessService.requirePlatformAdministration();
         return repository.findAll();
     }
 
     @Transactional(readOnly = true)
     public TenantEntity findById(UUID id) {
+        accessService.requireTenantAccess(id);
         return repository.findById(id)
                 .orElseThrow(() -> new DomainException("TENANT_NOT_FOUND", "Tenant was not found"));
     }

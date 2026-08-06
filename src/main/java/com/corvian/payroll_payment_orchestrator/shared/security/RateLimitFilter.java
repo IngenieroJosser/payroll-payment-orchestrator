@@ -11,12 +11,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.*;
 
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
+    private final SecurityProperties properties;
+    private final ClientIpResolver clientIpResolver;
     private final Map<String, RateLimitBucket> buckets = new ConcurrentHashMap<>();
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
         Thread thread = new Thread(runnable, "rate-limit-cleaner");
@@ -24,106 +27,52 @@ public class RateLimitFilter extends OncePerRequestFilter {
         return thread;
     });
 
-    public RateLimitFilter() {
-        // Schedule cleanup every 1 minute
-        this.scheduler.scheduleAtFixedRate(this::pruneExpiredBuckets, 1, 1, TimeUnit.MINUTES);
+    public RateLimitFilter(SecurityProperties properties, ClientIpResolver clientIpResolver) {
+        this.properties = properties;
+        this.clientIpResolver = clientIpResolver;
+        scheduler.scheduleAtFixedRate(this::pruneExpiredBuckets, 1, 1, TimeUnit.MINUTES);
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.contains("/swagger-ui") || path.contains("/v3/api-docs") || path.contains("/health") || path.contains("/actuator");
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-
-        // Skip rate limiting for Swagger UI, API Docs, and Health endpoints
-        String path = request.getRequestURI();
-        if (path.contains("/swagger-ui") || path.contains("/v3/api-docs") || path.contains("/health") || path.contains("/actuator")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        // Identify client by token principal or fallback to IP
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String key;
-        boolean isAuthenticated = auth != null && auth.isAuthenticated() && !"anonymousUser".equals(auth.getPrincipal());
-        if (isAuthenticated) {
-            key = "token:" + auth.getName();
-        } else {
-            key = "ip:" + clientIp(request);
-        }
-
         long now = System.currentTimeMillis();
-        long windowMs = 5000; // 5 seconds
-        int hardLimit = 20;   // Max 20 requests in 5 seconds
-        int softLimit = 10;   // Start queueing/throttling at 10 requests
-
-        RateLimitBucket bucket = buckets.computeIfAbsent(key, k -> new RateLimitBucket());
-        int currentRequests = bucket.getRequestsInWindow(now, windowMs);
-
-        // Flood Protection: Limit exceeded completely
-        if (currentRequests >= hardLimit) {
+        long windowMs = Duration.ofSeconds(properties.getRateLimitWindowSeconds()).toMillis();
+        int limit = properties.getRateLimitRequests();
+        String key = clientKey(request);
+        RateLimitBucket bucket = buckets.computeIfAbsent(key, ignored -> new RateLimitBucket());
+        int observed = bucket.registerAndCount(now, windowMs);
+        int remaining = Math.max(0, limit - observed);
+        response.setHeader("X-RateLimit-Limit", String.valueOf(limit));
+        response.setHeader("X-RateLimit-Remaining", String.valueOf(remaining));
+        response.setHeader("X-RateLimit-Reset", String.valueOf(properties.getRateLimitWindowSeconds()));
+        if (observed > limit) {
             response.setStatus(429);
             response.setContentType("application/json");
-            response.setHeader("X-RateLimit-Limit", String.valueOf(hardLimit));
-            response.setHeader("X-RateLimit-Remaining", "0");
-            response.setHeader("X-RateLimit-Reset", "5");
-            response.setHeader("X-RateLimit-Throttled", "false");
-
-            response.getWriter().write("{"
-                    + "\"success\":false,"
-                    + "\"error\":{"
-                    + "\"code\":\"RATE_LIMIT_EXCEEDED\","
-                    + "\"message\":\"Rate limit of 20 requests per 5 seconds exceeded. Flood protection active.\","
-                    + "\"details\":[\"Requests in last 5 seconds: " + currentRequests + "\"]"
-                    + "}"
-                    + "}");
+            response.setHeader("Retry-After", String.valueOf(properties.getRateLimitWindowSeconds()));
+            response.getWriter().write("{\"success\":false,\"error\":{\"code\":\"RATE_LIMIT_EXCEEDED\",\"message\":\"Request rate limit exceeded\"}}");
             return;
         }
-
-        // Register this request
-        bucket.addRequest(now);
-        int remaining = hardLimit - (currentRequests + 1);
-
-        // Throttling/Queueing logic: between 10 and 20 requests
-        boolean throttled = false;
-        long delayMs = 0;
-        if (currentRequests >= softLimit) {
-            throttled = true;
-            // Throttle requests by slowing them down proportionally to prevent downstream system crash
-            int excess = currentRequests - softLimit + 1;
-            delayMs = excess * 250L; // Delays range from 250ms up to 2500ms
-
-            logger.warn("RateLimit queueing active for " + key + ". Delaying thread by " + delayMs + "ms to prevent system stress.");
-
-            try {
-                Thread.sleep(delayMs);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-        }
-
-        // Set rate limit metrics headers
-        response.setHeader("X-RateLimit-Limit", String.valueOf(hardLimit));
-        response.setHeader("X-RateLimit-Remaining", String.valueOf(Math.max(0, remaining)));
-        response.setHeader("X-RateLimit-Reset", "5");
-        response.setHeader("X-RateLimit-Throttled", String.valueOf(throttled));
-        if (throttled) {
-            response.setHeader("X-RateLimit-Throttle-Delay-Ms", String.valueOf(delayMs));
-        }
-
         filterChain.doFilter(request, response);
     }
 
-    private String clientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
+    private String clientKey(HttpServletRequest request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getPrincipal())) {
+            return "principal:" + authentication.getName();
         }
-        return request.getRemoteAddr();
+        return "ip:" + clientIpResolver.resolve(request);
     }
 
     private void pruneExpiredBuckets() {
-        long now = System.currentTimeMillis();
-        // Remove buckets inactive for more than 30 seconds
-        buckets.entrySet().removeIf(entry -> now - entry.getValue().getLastAccessTime() > 30_000);
+        long threshold = System.currentTimeMillis() - Duration.ofSeconds(properties.getRateLimitWindowSeconds() * 2L).toMillis();
+        buckets.entrySet().removeIf(entry -> entry.getValue().lastAccessTime < threshold);
     }
 
     @PreDestroy
@@ -131,26 +80,16 @@ public class RateLimitFilter extends OncePerRequestFilter {
         scheduler.shutdown();
     }
 
-    private static class RateLimitBucket {
-        private final Queue<Long> requestTimestamps = new ConcurrentLinkedQueue<>();
+    private static final class RateLimitBucket {
+        private final Queue<Long> timestamps = new ConcurrentLinkedQueue<>();
         private volatile long lastAccessTime = System.currentTimeMillis();
 
-        public synchronized int getRequestsInWindow(long nowMs, long windowMs) {
-            lastAccessTime = nowMs;
-            long threshold = nowMs - windowMs;
-            while (!requestTimestamps.isEmpty() && requestTimestamps.peek() < threshold) {
-                requestTimestamps.poll();
-            }
-            return requestTimestamps.size();
-        }
-
-        public synchronized void addRequest(long nowMs) {
-            requestTimestamps.add(nowMs);
-            lastAccessTime = nowMs;
-        }
-
-        public long getLastAccessTime() {
-            return lastAccessTime;
+        synchronized int registerAndCount(long now, long windowMs) {
+            lastAccessTime = now;
+            long threshold = now - windowMs;
+            while (!timestamps.isEmpty() && timestamps.peek() < threshold) timestamps.poll();
+            timestamps.add(now);
+            return timestamps.size();
         }
     }
 }
